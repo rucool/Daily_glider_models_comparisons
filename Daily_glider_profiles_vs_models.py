@@ -167,8 +167,8 @@ for t in np.arange(len(nc_files_RTOFS)):
     '''
 
     # Download nc files
-    print('loading ' + file)
-    ftp.retrbinary('RETR '+file, open(file,'wb').write)
+    #print('loading ' + file)
+    #ftp.retrbinary('RETR '+file, open(file,'wb').write)
 
 #%% Read RTOFS grid and time
 print('Retrieving coordinates from RTOFS')
@@ -321,20 +321,26 @@ for id in gliders:
         oklatGOFS=np.round(np.interp(sublatGOFS,latGOFS,np.arange(len(latGOFS)))).astype(int)
 
         # Getting glider transect from GOFS 3.1
-        print('Getting glider transect from GOFS 3.1. If it breaks is because GOFS 3.1 server is not responding')
-        target_tempGOFS = np.empty((len(depthGOFS),len(oktimeGOFS[0])))
-        target_tempGOFS[:] = np.nan
-        for i in range(len(oktimeGOFS[0])):
-            print(len(oktimeGOFS[0]),' ',i)
-            target_tempGOFS[:,i] = GOFS31.variables['water_temp'][oktimeGOFS[0][i],:,oklatGOFS[i],oklonGOFS[i]]
-        target_tempGOFS[target_tempGOFS < -100] = np.nan
+        print('Getting glider transect from GOFS 3.1')
+        if len(oktimeGOFS[0]) == 0:
+            target_tempGOFS = np.empty((len(depthRTOFS)))
+            target_tempGOFS[:] = np.nan
+            target_saltGOFS = np.empty((len(depthRTOFS)))
+            target_saltGOFS[:] = np.nan
+        else:
+            target_tempGOFS = np.empty((len(depthGOFS),len(oktimeGOFS[0])))
+            target_tempGOFS[:] = np.nan
+            for i in range(len(oktimeGOFS[0])):
+                print(len(oktimeGOFS[0]),' ',i)
+                target_tempGOFS[:,i] = GOFS31.variables['water_temp'][oktimeGOFS[0][i],:,oklatGOFS[i],oklonGOFS[i]]
+            target_tempGOFS[target_tempGOFS < -100] = np.nan
 
-        target_saltGOFS = np.empty((len(depthGOFS),len(oktimeGOFS[0])))
-        target_saltGOFS[:] = np.nan
-        for i in range(len(oktimeGOFS[0])):
-            print(len(oktimeGOFS[0]),' ',i)
-            target_saltGOFS[:,i] = GOFS31.variables['salinity'][oktimeGOFS[0][i],:,oklatGOFS[i],oklonGOFS[i]]
-        target_saltGOFS[target_saltGOFS < -100] = np.nan
+            target_saltGOFS = np.empty((len(depthGOFS),len(oktimeGOFS[0])))
+            target_saltGOFS[:] = np.nan
+            for i in range(len(oktimeGOFS[0])):
+                print(len(oktimeGOFS[0]),' ',i)
+                target_saltGOFS[:,i] = GOFS31.variables['salinity'][oktimeGOFS[0][i],:,oklatGOFS[i],oklonGOFS[i]]
+                target_saltGOFS[target_saltGOFS < -100] = np.nan
 
         # interpolating glider lon and lat to lat and lon on RTOFS time
         sublonRTOFS = np.interp(tstamp_RTOFS,tstamp_glider,target_lonRTOFS)
@@ -346,23 +352,29 @@ for id in gliders:
 
         # Getting glider transect from RTOFS
         print('Getting glider transect from RTOFS')
-        target_tempRTOFS = np.empty((len(depthRTOFS),len(oktimeRTOFS[0])))
-        target_tempRTOFS[:] = np.nan
-        for i in range(len(oktimeRTOFS[0])):
-            print(len(oktimeRTOFS[0]),' ',i)
-            nc_file = nc_files_RTOFS[i]
-            ncRTOFS = xr.open_dataset(nc_file)
-            target_tempRTOFS[:,i] = ncRTOFS.variables['temperature'][0,:,oklatRTOFS[i],oklonRTOFS[i]]
-        target_tempRTOFS[target_tempRTOFS < -100] = np.nan
+        if len(oktimeRTOFS[0]) == 0:
+            target_tempRTOFS = np.empty((len(depthRTOFS)))
+            target_tempRTOFS[:] = np.nan
+            target_saltRTOFS = np.empty((len(depthRTOFS)))
+            target_saltRTOFS[:] = np.nan
+        else:
+            target_tempRTOFS = np.empty((len(depthRTOFS),len(oktimeRTOFS[0])))
+            target_tempRTOFS[:] = np.nan
+            for i in range(len(oktimeRTOFS[0])):
+                print(len(oktimeRTOFS[0]),' ',i)
+                nc_file = nc_files_RTOFS[i]
+                ncRTOFS = xr.open_dataset(nc_file)
+                target_tempRTOFS[:,i] = ncRTOFS.variables['temperature'][0,:,oklatRTOFS[i],oklonRTOFS[i]]
+            target_tempRTOFS[target_tempRTOFS < -100] = np.nan
 
-        target_saltRTOFS = np.empty((len(depthRTOFS),len(oktimeRTOFS[0])))
-        target_saltRTOFS[:] = np.nan
-        for i in range(len(oktimeRTOFS[0])):
-            print(len(oktimeRTOFS[0]),' ',i)
-            nc_file = nc_files_RTOFS[i]
-            ncRTOFS = xr.open_dataset(nc_file)
-            target_saltRTOFS[:,i] = ncRTOFS.variables['salinity'][0,:,oklatRTOFS[i],oklonRTOFS[i]]
-        target_saltRTOFS[target_saltRTOFS < -100] = np.nan
+            target_saltRTOFS = np.empty((len(depthRTOFS),len(oktimeRTOFS[0])))
+            target_saltRTOFS[:] = np.nan
+            for i in range(len(oktimeRTOFS[0])):
+                print(len(oktimeRTOFS[0]),' ',i)
+                nc_file = nc_files_RTOFS[i]
+                ncRTOFS = xr.open_dataset(nc_file)
+                target_saltRTOFS[:,i] = ncRTOFS.variables['salinity'][0,:,oklatRTOFS[i],oklonRTOFS[i]]
+            target_saltRTOFS[target_saltRTOFS < -100] = np.nan
 
         #os.system('rm ' + out_dir + '/' + '*.nc')
 
@@ -420,19 +432,25 @@ for id in gliders:
 
         # Getting glider transect from Copernicus model
         print('Getting glider transect from Copernicus model')
-        target_tempCOP = np.empty((len(depthCOP),len(oktimeCOP[0])))
-        target_tempCOP[:] = np.nan
-        for i in range(len(oktimeCOP[0])):
-            print(len(oktimeCOP[0]),' ',i)
-            target_tempCOP[:,i] = COP.variables['thetao'][oktimeCOP[0][i],:,oklatCOP[i],oklonCOP[i]]
-        target_tempCOP[target_tempCOP < -100] = np.nan
+        if len(oktimeCOP[0]) == 0:
+            target_tempCOP = np.empty((len(depthRTOFS)))
+            target_tempCOP[:] = np.nan
+            target_saltCOP = np.empty((len(depthRTOFS)))
+            target_saltCOP[:] = np.nan
+        else:
+            target_tempCOP = np.empty((len(depthCOP),len(oktimeCOP[0])))
+            target_tempCOP[:] = np.nan
+            for i in range(len(oktimeCOP[0])):
+                print(len(oktimeCOP[0]),' ',i)
+                target_tempCOP[:,i] = COP.variables['thetao'][oktimeCOP[0][i],:,oklatCOP[i],oklonCOP[i]]
+            target_tempCOP[target_tempCOP < -100] = np.nan
 
-        target_saltCOP = np.empty((len(depthCOP),len(oktimeCOP[0])))
-        target_saltCOP[:] = np.nan
-        for i in range(len(oktimeCOP[0])):
-            print(len(oktimeCOP[0]),' ',i)
-            target_saltCOP[:,i] = COP.variables['so'][oktimeCOP[0][i],:,oklatCOP[i],oklonCOP[i]]
-        target_saltCOP[target_saltCOP < -100] = np.nan
+            target_saltCOP = np.empty((len(depthCOP),len(oktimeCOP[0])))
+            target_saltCOP[:] = np.nan
+            for i in range(len(oktimeCOP[0])):
+                print(len(oktimeCOP[0]),' ',i)
+                target_saltCOP[:,i] = COP.variables['so'][oktimeCOP[0][i],:,oklatCOP[i],oklonCOP[i]]
+            target_saltCOP[target_saltCOP < -100] = np.nan
 
         os.system('rm ' + out_dir + '/' + id + '.nc')
 
@@ -460,11 +478,11 @@ for id in gliders:
         meshlatCOP = np.meshgrid(latCOP,lonCOP)
 
         # min and max values for plotting
-        min_temp = np.floor(np.min([np.nanmin(df[df.columns[3]]),np.nanmin(target_tempGOFS),np.nanmin(target_tempRTOFS),np.nanmin(target_tempCOP)]))
-        max_temp = np.ceil(np.max([np.nanmax(df[df.columns[3]]),np.nanmax(target_tempGOFS),np.nanmax(target_tempRTOFS),np.nanmax(target_tempCOP)]))
+        min_temp = np.floor(np.nanmin([np.nanmin(df[df.columns[3]]),np.nanmin(target_tempGOFS),np.nanmin(target_tempRTOFS),np.nanmin(target_tempCOP)]))
+        max_temp = np.ceil(np.nanmax([np.nanmax(df[df.columns[3]]),np.nanmax(target_tempGOFS),np.nanmax(target_tempRTOFS),np.nanmax(target_tempCOP)]))
 
-        min_salt = np.floor(np.min([np.nanmin(df[df.columns[4]]),np.nanmin(target_saltGOFS),np.nanmin(target_saltRTOFS),np.nanmin(target_saltCOP)]))
-        max_salt = np.ceil(np.max([np.nanmax(df[df.columns[4]]),np.nanmax(target_saltGOFS),np.nanmax(target_saltRTOFS),np.nanmax(target_saltCOP)]))
+        min_salt = np.floor(np.nanmin([np.nanmin(df[df.columns[4]]),np.nanmin(target_saltGOFS),np.nanmin(target_saltRTOFS),np.nanmin(target_saltCOP)]))
+        max_salt = np.ceil(np.nanmax([np.nanmax(df[df.columns[4]]),np.nanmax(target_saltGOFS),np.nanmax(target_saltRTOFS),np.nanmax(target_saltCOP)]))
 
         # Temperature profile
         fig, ax = plt.subplots(figsize=(14, 12))
@@ -479,8 +497,9 @@ for id in gliders:
         plt.plot(np.nanmean(target_tempGOFS,axis=1),-depthGOFS,'.-r',markersize=12,linewidth=2,\
              label='GOFS 3.1'+' '+str(timeGOFS[0].year)+' '+'['+str(timeGOFS[0])[5:13]+','+str(timeGOFS[-1])[5:13]+']')
         plt.plot(target_tempRTOFS,-depthRTOFS,'.-',color='mediumseagreen',label='_nolegend_')
-        plt.plot(np.nanmean(target_tempRTOFS,axis=1),-depthRTOFS,'.-g',markersize=12,linewidth=2,\
-             label='RTOFS'+' '+str(timeRTOFS[0].year)+' '+'['+str(timeRTOFS[0])[5:13]+','+str(timeRTOFS[-1])[5:13]+']')
+        if len(oktimeRTOFS[0]) != 0:
+            plt.plot(np.nanmean(target_tempRTOFS,axis=1),-depthRTOFS,'.-g',markersize=12,linewidth=2,\
+                label='RTOFS'+' '+str(timeRTOFS[0].year)+' '+'['+str(timeRTOFS[0])[5:13]+','+str(timeRTOFS[-1])[5:13]+']')
         plt.plot(target_tempCOP,-depthCOP,'.-',color='plum',label='_nolegend_')
         plt.plot(np.nanmean(target_tempCOP,axis=1),-depthCOP,'.-',color='darkorchid',markersize=12,linewidth=2,\
              label='Copernicus'+' '+str(timeCOP[0].year)+' '+'['+str(timeCOP[0])[5:13]+','+str(timeCOP[-1])[5:13]+']')
@@ -493,10 +512,11 @@ for id in gliders:
         plt.grid('on')
 
         # lat and lon bounds of box to draw
-        minlonRTOFS = np.min(meshlonRTOFSg[0][oklatRTOFS.min()-2:oklatRTOFS.max()+2,oklonRTOFS.min()-2:oklonRTOFS.max()+2])
-        maxlonRTOFS = np.max(meshlonRTOFSg[0][oklatRTOFS.min()-2:oklatRTOFS.max()+2,oklonRTOFS.min()-2:oklonRTOFS.max()+2])
-        minlatRTOFS = np.min(meshlatRTOFSg[0][oklonRTOFS.min()-2:oklonRTOFS.max()+2,oklatRTOFS.min()-2:oklatRTOFS.max()+2])
-        maxlatRTOFS = np.max(meshlatRTOFSg[0][oklonRTOFS.min()-2:oklonRTOFS.max()+2,oklatRTOFS.min()-2:oklatRTOFS.max()+2])
+        if len(oklatRTOFS) != 0:
+            minlonRTOFS = np.min(meshlonRTOFSg[0][oklatRTOFS.min()-2:oklatRTOFS.max()+2,oklonRTOFS.min()-2:oklonRTOFS.max()+2])
+            maxlonRTOFS = np.max(meshlonRTOFSg[0][oklatRTOFS.min()-2:oklatRTOFS.max()+2,oklonRTOFS.min()-2:oklonRTOFS.max()+2])
+            minlatRTOFS = np.min(meshlatRTOFSg[0][oklonRTOFS.min()-2:oklonRTOFS.max()+2,oklatRTOFS.min()-2:oklatRTOFS.max()+2])
+            maxlatRTOFS = np.max(meshlatRTOFSg[0][oklonRTOFS.min()-2:oklonRTOFS.max()+2,oklatRTOFS.min()-2:oklatRTOFS.max()+2])
 
         # Getting subdomain for plotting glider track on bathymetry
         oklatbath = np.logical_and(bath_lat >= np.min(latg)-5,bath_lat <= np.max(latg)+5)
@@ -514,10 +534,11 @@ for id in gliders:
         #plt.axis([np.min(long)-5,np.max(long)+5,np.min(latg)-5,np.max(latg)+5])
         plt.plot(long,latg,'.-',color='orange',label='Glider track',\
              markersize=3)
-        rect = patches.Rectangle((minlonRTOFS,minlatRTOFS),\
+        if len(oklatRTOFS) != 0:
+            rect = patches.Rectangle((minlonRTOFS,minlatRTOFS),\
                              maxlonRTOFS-minlonRTOFS,maxlatRTOFS-minlatRTOFS,\
                              linewidth=1,edgecolor='k',facecolor='none')
-        ax.add_patch(rect)
+            ax.add_patch(rect)
         plt.title('Glider track and model grid positions',fontsize=20)
         plt.axis('scaled')
         plt.legend(loc='upper center',bbox_to_anchor=(1.1,1))
@@ -535,9 +556,10 @@ for id in gliders:
                   + '\n ny = ' + str(oklatGOFS) \
                   + '\n [day][hour] = ' + str(np.unique([str(i)[8:10] for i in timeGOFS])) \
                   + str([str(i)[11:13]for i in timeGOFS]))
-        ax.plot(meshlonRTOFSg[0][oklatRTOFS.min()-2:oklatRTOFS.max()+2,oklonRTOFS.min()-2:oklonRTOFS.max()+2],\
-            meshlatRTOFSg[0][oklonRTOFS.min()-2:oklonRTOFS.max()+2,oklatRTOFS.min()-2:oklatRTOFS.max()+2].T,\
-            '.',color='green')
+        if len(oklatRTOFS) != 0:
+            ax.plot(meshlonRTOFSg[0][oklatRTOFS.min()-2:oklatRTOFS.max()+2,oklonRTOFS.min()-2:oklonRTOFS.max()+2],\
+                meshlatRTOFSg[0][oklonRTOFS.min()-2:oklonRTOFS.max()+2,oklatRTOFS.min()-2:oklatRTOFS.max()+2].T,\
+                '.',color='green')
         ax.plot(lonRTOFSg[oklonRTOFS],latRTOFSg[oklatRTOFS],'og',\
             markersize=8,markeredgecolor='k',\
             label='RTOFS grid points \n nx = ' + str(oklonRTOFS) \
@@ -571,8 +593,9 @@ for id in gliders:
         plt.plot(np.nanmean(target_saltGOFS,axis=1),-depthGOFS,'.-r',markersize=12,linewidth=2,\
              label='GOFS 3.1'+' '+str(timeGOFS[0].year)+' '+'['+str(timeGOFS[0])[5:13]+','+str(timeGOFS[-1])[5:13]+']')
         plt.plot(target_saltRTOFS,-depthRTOFS,'.-',color='mediumseagreen',label='_nolegend_')
-        plt.plot(np.nanmean(target_saltRTOFS,axis=1),-depthRTOFS,'.-g',markersize=12,linewidth=2,\
-             label='RTOFS'+' '+str(timeRTOFS[0].year)+' '+'['+str(timeRTOFS[0])[5:13]+','+str(timeRTOFS[-1])[5:13]+']')
+        if len(oklatRTOFS) != 0:
+            plt.plot(np.nanmean(target_saltRTOFS,axis=1),-depthRTOFS,'.-g',markersize=12,linewidth=2,\
+                label='RTOFS'+' '+str(timeRTOFS[0].year)+' '+'['+str(timeRTOFS[0])[5:13]+','+str(timeRTOFS[-1])[5:13]+']')
         plt.plot(target_saltCOP,-depthCOP,'.-',color='plum',label='_nolegend_')
         plt.plot(np.nanmean(target_saltCOP,axis=1),-depthCOP,'.-',color='darkorchid',markersize=12,linewidth=2,\
              label='Copernicus'+' '+str(timeCOP[0].year)+' '+'['+str(timeCOP[0])[5:13]+','+str(timeCOP[-1])[5:13]+']')
@@ -585,10 +608,11 @@ for id in gliders:
         plt.grid('on')
 
         # lat and lon bounds of box to draw
-        minlonRTOFS = np.min(meshlonRTOFSg[0][oklatRTOFS.min()-2:oklatRTOFS.max()+2,oklonRTOFS.min()-2:oklonRTOFS.max()+2])
-        maxlonRTOFS = np.max(meshlonRTOFSg[0][oklatRTOFS.min()-2:oklatRTOFS.max()+2,oklonRTOFS.min()-2:oklonRTOFS.max()+2])
-        minlatRTOFS = np.min(meshlatRTOFSg[0][oklonRTOFS.min()-2:oklonRTOFS.max()+2,oklatRTOFS.min()-2:oklatRTOFS.max()+2])
-        maxlatRTOFS = np.max(meshlatRTOFSg[0][oklonRTOFS.min()-2:oklonRTOFS.max()+2,oklatRTOFS.min()-2:oklatRTOFS.max()+2])
+        if len(oklatRTOFS) != 0:
+            minlonRTOFS = np.min(meshlonRTOFSg[0][oklatRTOFS.min()-2:oklatRTOFS.max()+2,oklonRTOFS.min()-2:oklonRTOFS.max()+2])
+            maxlonRTOFS = np.max(meshlonRTOFSg[0][oklatRTOFS.min()-2:oklatRTOFS.max()+2,oklonRTOFS.min()-2:oklonRTOFS.max()+2])
+            minlatRTOFS = np.min(meshlatRTOFSg[0][oklonRTOFS.min()-2:oklonRTOFS.max()+2,oklatRTOFS.min()-2:oklatRTOFS.max()+2])
+            maxlatRTOFS = np.max(meshlatRTOFSg[0][oklonRTOFS.min()-2:oklonRTOFS.max()+2,oklatRTOFS.min()-2:oklatRTOFS.max()+2])
 
         # Getting subdomain for plotting glider track on bathymetry
         oklatbath = np.logical_and(bath_lat >= np.min(latg)-5,bath_lat <= np.max(latg)+5)
@@ -606,10 +630,11 @@ for id in gliders:
         plt.axis([np.min(long)-5,np.max(long)+5,np.min(latg)-5,np.max(latg)+5])
         plt.plot(long,latg,'.-',color='orange',label='Glider track',\
              markersize=3)
-        rect = patches.Rectangle((minlonRTOFS,minlatRTOFS),\
+        if len(oklatRTOFS) != 0:
+            rect = patches.Rectangle((minlonRTOFS,minlatRTOFS),\
                              maxlonRTOFS-minlonRTOFS,maxlatRTOFS-minlatRTOFS,\
                              linewidth=1,edgecolor='k',facecolor='none')
-        ax.add_patch(rect)
+            ax.add_patch(rect)
         plt.title('Glider track and model grid positions',fontsize=20)
         plt.axis('scaled')
         plt.legend(loc='upper center',bbox_to_anchor=(1.1,1))
@@ -627,9 +652,10 @@ for id in gliders:
                   + '\n ny = ' + str(oklatGOFS) \
                   + '\n [day][hour] = ' + str(np.unique([str(i)[8:10] for i in timeGOFS])) \
                   + str([str(i)[11:13]for i in timeGOFS]))
-        ax.plot(meshlonRTOFSg[0][oklatRTOFS.min()-2:oklatRTOFS.max()+2,oklonRTOFS.min()-2:oklonRTOFS.max()+2],\
-            meshlatRTOFSg[0][oklonRTOFS.min()-2:oklonRTOFS.max()+2,oklatRTOFS.min()-2:oklatRTOFS.max()+2].T,\
-            '.',color='green')
+        if len(oklatRTOFS) != 0:
+            ax.plot(meshlonRTOFSg[0][oklatRTOFS.min()-2:oklatRTOFS.max()+2,oklonRTOFS.min()-2:oklonRTOFS.max()+2],\
+                meshlatRTOFSg[0][oklonRTOFS.min()-2:oklonRTOFS.max()+2,oklatRTOFS.min()-2:oklatRTOFS.max()+2].T,\
+                '.',color='green')
         ax.plot(lonRTOFSg[oklonRTOFS],latRTOFSg[oklatRTOFS],'og',\
             markersize=8,markeredgecolor='k',\
             label='RTOFS grid points \n nx = ' + str(oklonRTOFS) \

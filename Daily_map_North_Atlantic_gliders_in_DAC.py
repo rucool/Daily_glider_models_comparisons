@@ -252,10 +252,6 @@ for i,f in enumerate(zip_files):
             plt.text(np.mean(lon_best_track),np.mean(lat_best_track),name.split(' ')[-1],fontsize=14,\
                      fontweight = 'bold')
 
-plt.plot(lon_forec_track, lat_forec_track,'.-',color='darkorange',label='Forecast Track')
-plt.plot(lon_forec_cone,lat_forec_cone,'.-b',markersize=1,label='Uncertainty Cone')
-plt.plot(lon_best_track,lat_best_track,'or',markersize=3,label='Best Track')
-
 for i,id in enumerate(gliders):
     print('Reading ' + id)
     e.dataset_id = id
