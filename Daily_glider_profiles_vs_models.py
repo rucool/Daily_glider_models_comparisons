@@ -167,8 +167,8 @@ for t in np.arange(len(nc_files_RTOFS)):
     '''
 
     # Download nc files
-    #print('loading ' + file)
-    #ftp.retrbinary('RETR '+file, open(file,'wb').write)
+    print('loading ' + file)
+    ftp.retrbinary('RETR '+file, open(file,'wb').write)
 
 #%% Read RTOFS grid and time
 print('Retrieving coordinates from RTOFS')
@@ -190,6 +190,7 @@ COP_grid = xr.open_dataset(ncCOP_global)
 
 latCOP_glob = COP_grid.latitude[:]
 lonCOP_glob = COP_grid.longitude[:]
+depthCOP_glob = COP_grid.depth[:] 
 
 #%% Reading bathymetry data
 ncbath = xr.open_dataset(bath_file)
@@ -398,14 +399,26 @@ for id in gliders:
         ' --pwd ' +  'MariaCMEMS2018'
 
         os.system(motuc)
+        # Check if file was downloaded
+        aa = os.system
 
         COP_file = out_dir + '/' + id + '.nc'
-        COP = xr.open_dataset(COP_file)
+        # Check if file was downloaded
+        resp = os.system('ls ' + out_dir +'/' + id + '.nc') 
+        if resp == 0:
+            COP = xr.open_dataset(COP_file)
 
-        latCOP = COP.latitude[:]
-        lonCOP = COP.longitude[:]
-        depthCOP = COP.depth[:]
-        tCOP = np.asarray(mdates.num2date(mdates.date2num(COP.time[:])))
+            latCOP = COP.latitude[:]
+            lonCOP = COP.longitude[:]
+            depthCOP = COP.depth[:]
+            tCOP = np.asarray(mdates.num2date(mdates.date2num(COP.time[:])))
+        else:
+            latCOP = np.empty(depthCOP_glob.shape[0])
+            latCOP[:] = np.nan
+            lonCOP = np.empty(depthCOP_glob.shape[0])
+            lonCOP[:] = np.nan
+            tCOP = np.empty(depthCOP_glob.shape[0])
+            tCOP[:] = np.nan
 
         tmin = tini
         tmax = tend

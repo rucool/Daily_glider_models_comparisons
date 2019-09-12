@@ -160,8 +160,11 @@ zip_files = [f for f in zip_files if np.logical_or('al' in f,'AL' in f)]
 
 #%% Map of North Atlantic with glider tracks
 col = ['red','darkcyan','gold','m','darkorange','crimson','lime',\
+       'darkorchid','brown','sienna','yellow','orchid','gray',\
+       'red','darkcyan','gold','m','darkorange','crimson','lime',\
        'darkorchid','brown','sienna','yellow','orchid','gray']
-mark = ['o','*','p','^','D','X','o','*','p','^','D','X','o']
+mark = ['o','*','p','^','D','X','o','*','p','^','D','X','o',\
+        'o','*','p','^','D','X','o','*','p','^','D','X','o']
 
 fig, ax = plt.subplots(figsize=(10, 5))
 plt.contour(bath_lon,bath_lat,bath_elev,[0],colors='k')
