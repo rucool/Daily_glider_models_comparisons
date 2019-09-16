@@ -190,7 +190,7 @@ COP_grid = xr.open_dataset(ncCOP_global)
 
 latCOP_glob = COP_grid.latitude[:]
 lonCOP_glob = COP_grid.longitude[:]
-depthCOP_glob = COP_grid.depth[:] 
+depthCOP_glob = COP_grid.depth[:]
 
 #%% Reading bathymetry data
 ncbath = xr.open_dataset(bath_file)
@@ -324,9 +324,9 @@ for id in gliders:
         # Getting glider transect from GOFS 3.1
         print('Getting glider transect from GOFS 3.1')
         if len(oktimeGOFS[0]) == 0:
-            target_tempGOFS = np.empty((len(depthRTOFS)))
+            target_tempGOFS = np.empty((len(depthRTOFS),1))
             target_tempGOFS[:] = np.nan
-            target_saltGOFS = np.empty((len(depthRTOFS)))
+            target_saltGOFS = np.empty((len(depthRTOFS),1))
             target_saltGOFS[:] = np.nan
         else:
             target_tempGOFS = np.empty((len(depthGOFS),len(oktimeGOFS[0])))
@@ -354,9 +354,9 @@ for id in gliders:
         # Getting glider transect from RTOFS
         print('Getting glider transect from RTOFS')
         if len(oktimeRTOFS[0]) == 0:
-            target_tempRTOFS = np.empty((len(depthRTOFS)))
+            target_tempRTOFS = np.empty((len(depthRTOFS),1))
             target_tempRTOFS[:] = np.nan
-            target_saltRTOFS = np.empty((len(depthRTOFS)))
+            target_saltRTOFS = np.empty((len(depthRTOFS),1))
             target_saltRTOFS[:] = np.nan
         else:
             target_tempRTOFS = np.empty((len(depthRTOFS),len(oktimeRTOFS[0])))
@@ -404,7 +404,7 @@ for id in gliders:
 
         COP_file = out_dir + '/' + id + '.nc'
         # Check if file was downloaded
-        resp = os.system('ls ' + out_dir +'/' + id + '.nc') 
+        resp = os.system('ls ' + out_dir +'/' + id + '.nc')
         if resp == 0:
             COP = xr.open_dataset(COP_file)
 
@@ -446,9 +446,9 @@ for id in gliders:
         # Getting glider transect from Copernicus model
         print('Getting glider transect from Copernicus model')
         if len(oktimeCOP[0]) == 0:
-            target_tempCOP = np.empty((len(depthRTOFS)))
+            target_tempCOP = np.empty((len(depthCOP),1))
             target_tempCOP[:] = np.nan
-            target_saltCOP = np.empty((len(depthRTOFS)))
+            target_saltCOP = np.empty((len(depthCOP),1))
             target_saltCOP[:] = np.nan
         else:
             target_tempCOP = np.empty((len(depthCOP),len(oktimeCOP[0])))
@@ -507,15 +507,17 @@ for id in gliders:
              label=id[:-14]+' '+str(timeg[0])[0:4]+' '+'['+str(timeg[0])[5:19]+','+str(timeg[-1])[5:19]+']')
 
         plt.plot(target_tempGOFS,-depthGOFS,'.-',color='lightcoral',label='_nolegend_')
-        plt.plot(np.nanmean(target_tempGOFS,axis=1),-depthGOFS,'.-r',markersize=12,linewidth=2,\
-             label='GOFS 3.1'+' '+str(timeGOFS[0].year)+' '+'['+str(timeGOFS[0])[5:13]+','+str(timeGOFS[-1])[5:13]+']')
+        if len(oktimeGOFS[0]) != 0:
+            plt.plot(np.nanmean(target_tempGOFS,axis=1),-depthGOFS,'.-r',markersize=12,linewidth=2,\
+                label='GOFS 3.1'+' '+str(timeGOFS[0].year)+' '+'['+str(timeGOFS[0])[5:13]+','+str(timeGOFS[-1])[5:13]+']')
         plt.plot(target_tempRTOFS,-depthRTOFS,'.-',color='mediumseagreen',label='_nolegend_')
         if len(oktimeRTOFS[0]) != 0:
             plt.plot(np.nanmean(target_tempRTOFS,axis=1),-depthRTOFS,'.-g',markersize=12,linewidth=2,\
                 label='RTOFS'+' '+str(timeRTOFS[0].year)+' '+'['+str(timeRTOFS[0])[5:13]+','+str(timeRTOFS[-1])[5:13]+']')
         plt.plot(target_tempCOP,-depthCOP,'.-',color='plum',label='_nolegend_')
-        plt.plot(np.nanmean(target_tempCOP,axis=1),-depthCOP,'.-',color='darkorchid',markersize=12,linewidth=2,\
-             label='Copernicus'+' '+str(timeCOP[0].year)+' '+'['+str(timeCOP[0])[5:13]+','+str(timeCOP[-1])[5:13]+']')
+        if len(oktimeCOP[0]) != 0:
+            plt.plot(np.nanmean(target_tempCOP,axis=1),-depthCOP,'.-',color='darkorchid',markersize=12,linewidth=2,\
+                label='Copernicus'+' '+str(timeCOP[0].year)+' '+'['+str(timeCOP[0])[5:13]+','+str(timeCOP[-1])[5:13]+']')
         plt.ylabel('Depth (m)',fontsize=20)
         plt.xlabel('Temperature ($^oC$)',fontsize=20)
         plt.title('Temperature Profile ' + id,fontsize=20)
@@ -560,12 +562,13 @@ for id in gliders:
         ax.plot(long,latg,'.-',color='orange',label='Glider track')
         ax.plot(long[0],latg[0],'sc',label='Initial profile time '+str(timeg[0])[0:16])
         ax.plot(long[-1],latg[-1],'sb',label='final profile time '+str(timeg[-1])[0:16])
-        ax.plot(meshlonGOFSg[0][oklatGOFS.min()-2:oklatGOFS.max()+2,oklonGOFS.min()-2:oklonGOFS.max()+2],\
-            meshlatGOFSg[0][oklonGOFS.min()-2:oklonGOFS.max()+2,oklatGOFS.min()-2:oklatGOFS.max()+2].T,\
-            '.',color='red')
-        ax.plot(lonGOFSg[oklonGOFS],latGOFSg[oklatGOFS],'or',\
-            markersize=8,markeredgecolor='k',\
-            label='GOFS 3.1 grid points \n nx = ' + str(oklonGOFS) \
+        if len(oklatGOFS) != 0:
+            ax.plot(meshlonGOFSg[0][oklatGOFS.min()-2:oklatGOFS.max()+2,oklonGOFS.min()-2:oklonGOFS.max()+2],\
+                meshlatGOFSg[0][oklonGOFS.min()-2:oklonGOFS.max()+2,oklatGOFS.min()-2:oklatGOFS.max()+2].T,\
+                '.',color='red')
+            ax.plot(lonGOFSg[oklonGOFS],latGOFSg[oklatGOFS],'or',\
+                markersize=8,markeredgecolor='k',\
+                label='GOFS 3.1 grid points \n nx = ' + str(oklonGOFS) \
                   + '\n ny = ' + str(oklatGOFS) \
                   + '\n [day][hour] = ' + str(np.unique([str(i)[8:10] for i in timeGOFS])) \
                   + str([str(i)[11:13]for i in timeGOFS]))
@@ -573,21 +576,22 @@ for id in gliders:
             ax.plot(meshlonRTOFSg[0][oklatRTOFS.min()-2:oklatRTOFS.max()+2,oklonRTOFS.min()-2:oklonRTOFS.max()+2],\
                 meshlatRTOFSg[0][oklonRTOFS.min()-2:oklonRTOFS.max()+2,oklatRTOFS.min()-2:oklatRTOFS.max()+2].T,\
                 '.',color='green')
-        ax.plot(lonRTOFSg[oklonRTOFS],latRTOFSg[oklatRTOFS],'og',\
-            markersize=8,markeredgecolor='k',\
-            label='RTOFS grid points \n nx = ' + str(oklonRTOFS) \
-            + '\n ny = ' + str(oklatRTOFS) \
-            + '\n [day][hour] = ' + str(np.unique([str(i)[8:10] for i in timeRTOFS])) \
-               + str([str(i)[11:13]for i in timeRTOFS]))
-        ax.plot(meshlonCOP[0][oklatCOP.min()-2:oklatCOP.max()+2,oklonCOP.min()-2:oklonCOP.max()+2],\
-            meshlatCOP[0][oklonCOP.min()-2:oklonCOP.max()+2,oklatCOP.min()-2:oklatCOP.max()+2].T,\
-            '.',color='darkorchid')
-        ax.plot(lonCOP[oklonCOP],latCOP[oklatCOP],'o',color='darkorchid',\
-            markersize=8,markeredgecolor='k',\
-            label='Copernicus grid points \n nx = '+ str(oklonCOP_glob) \
-            + '\n ny = '+str(oklatCOP_glob) \
-            + '\n [day][hour] = ' + str([str(i)[8:10] for i in timeCOP]) \
-            + str([str(i)[11:13]for i in timeCOP]))
+            ax.plot(lonRTOFSg[oklonRTOFS],latRTOFSg[oklatRTOFS],'og',\
+                markersize=8,markeredgecolor='k',\
+                label='RTOFS grid points \n nx = ' + str(oklonRTOFS) \
+                + '\n ny = ' + str(oklatRTOFS) \
+                + '\n [day][hour] = ' + str(np.unique([str(i)[8:10] for i in timeRTOFS])) \
+                + str([str(i)[11:13]for i in timeRTOFS]))
+        if len(oklatCOP) != 0:
+            ax.plot(meshlonCOP[0][oklatCOP.min()-2:oklatCOP.max()+2,oklonCOP.min()-2:oklonCOP.max()+2],\
+                meshlatCOP[0][oklonCOP.min()-2:oklonCOP.max()+2,oklatCOP.min()-2:oklatCOP.max()+2].T,\
+                '.',color='darkorchid')
+            ax.plot(lonCOP[oklonCOP],latCOP[oklatCOP],'o',color='darkorchid',\
+                markersize=8,markeredgecolor='k',\
+                label='Copernicus grid points \n nx = '+ str(oklonCOP_glob) \
+                + '\n ny = '+str(oklatCOP_glob) \
+                + '\n [day][hour] = ' + str([str(i)[8:10] for i in timeCOP]) \
+                + str([str(i)[11:13]for i in timeCOP]))
         ax.legend(loc='upper center',bbox_to_anchor=(0.5,-0.3))
 
         folder = '/www/web/rucool/hurricane/Hurricane_season_2019/' + ti.strftime('%b-%d') + '/'
@@ -603,15 +607,17 @@ for id in gliders:
         plt.plot(np.nanmean(saltg_gridded,axis=1),-depthg_gridded,'.-b',\
              label=id[:-14]+' '+str(timeg[0])[0:4]+' '+'['+str(timeg[0])[5:19]+','+str(timeg[-1])[5:19]+']')
         plt.plot(target_saltGOFS,-depthGOFS,'.-',color='lightcoral',label='_nolegend_')
-        plt.plot(np.nanmean(target_saltGOFS,axis=1),-depthGOFS,'.-r',markersize=12,linewidth=2,\
-             label='GOFS 3.1'+' '+str(timeGOFS[0].year)+' '+'['+str(timeGOFS[0])[5:13]+','+str(timeGOFS[-1])[5:13]+']')
+        if len(oktimeGOFS[0]) != 0:
+            plt.plot(np.nanmean(target_saltGOFS,axis=1),-depthGOFS,'.-r',markersize=12,linewidth=2,\
+                label='GOFS 3.1'+' '+str(timeGOFS[0].year)+' '+'['+str(timeGOFS[0])[5:13]+','+str(timeGOFS[-1])[5:13]+']')
         plt.plot(target_saltRTOFS,-depthRTOFS,'.-',color='mediumseagreen',label='_nolegend_')
-        if len(oklatRTOFS) != 0:
+        if len(oktimeRTOFS[0]) != 0:
             plt.plot(np.nanmean(target_saltRTOFS,axis=1),-depthRTOFS,'.-g',markersize=12,linewidth=2,\
                 label='RTOFS'+' '+str(timeRTOFS[0].year)+' '+'['+str(timeRTOFS[0])[5:13]+','+str(timeRTOFS[-1])[5:13]+']')
         plt.plot(target_saltCOP,-depthCOP,'.-',color='plum',label='_nolegend_')
-        plt.plot(np.nanmean(target_saltCOP,axis=1),-depthCOP,'.-',color='darkorchid',markersize=12,linewidth=2,\
-             label='Copernicus'+' '+str(timeCOP[0].year)+' '+'['+str(timeCOP[0])[5:13]+','+str(timeCOP[-1])[5:13]+']')
+        if len(oktimeCOP[0]) != 0:
+            plt.plot(np.nanmean(target_saltCOP,axis=1),-depthCOP,'.-',color='darkorchid',markersize=12,linewidth=2,\
+                label='Copernicus'+' '+str(timeCOP[0].year)+' '+'['+str(timeCOP[0])[5:13]+','+str(timeCOP[-1])[5:13]+']')
         plt.ylabel('Depth (m)',fontsize=20)
         plt.xlabel('Salinity',fontsize=20)
         plt.title('Salinity Profile ' + id,fontsize=20)
@@ -656,34 +662,36 @@ for id in gliders:
         ax.plot(long,latg,'.-',color='orange',label='Glider track')
         ax.plot(long[0],latg[0],'sc',label='Initial profile time '+str(timeg[0])[0:16])
         ax.plot(long[-1],latg[-1],'sb',label='final profile time '+str(timeg[-1])[0:16])
-        ax.plot(meshlonGOFSg[0][oklatGOFS.min()-2:oklatGOFS.max()+2,oklonGOFS.min()-2:oklonGOFS.max()+2],\
-            meshlatGOFSg[0][oklonGOFS.min()-2:oklonGOFS.max()+2,oklatGOFS.min()-2:oklatGOFS.max()+2].T,\
-            '.',color='red')
-        ax.plot(lonGOFSg[oklonGOFS],latGOFSg[oklatGOFS],'or',\
-            markersize=8,markeredgecolor='k',\
-            label='GOFS 3.1 grid points \n nx = ' + str(oklonGOFS) \
-                  + '\n ny = ' + str(oklatGOFS) \
-                  + '\n [day][hour] = ' + str(np.unique([str(i)[8:10] for i in timeGOFS])) \
-                  + str([str(i)[11:13]for i in timeGOFS]))
+        if len(oklatGOFS) != 0:
+            ax.plot(meshlonGOFSg[0][oklatGOFS.min()-2:oklatGOFS.max()+2,oklonGOFS.min()-2:oklonGOFS.max()+2],\
+                meshlatGOFSg[0][oklonGOFS.min()-2:oklonGOFS.max()+2,oklatGOFS.min()-2:oklatGOFS.max()+2].T,\
+                '.',color='red')
+            ax.plot(lonGOFSg[oklonGOFS],latGOFSg[oklatGOFS],'or',\
+                markersize=8,markeredgecolor='k',\
+                label='GOFS 3.1 grid points \n nx = ' + str(oklonGOFS) \
+                    + '\n ny = ' + str(oklatGOFS) \
+                    + '\n [day][hour] = ' + str(np.unique([str(i)[8:10] for i in timeGOFS])) \
+                    + str([str(i)[11:13]for i in timeGOFS]))
         if len(oklatRTOFS) != 0:
             ax.plot(meshlonRTOFSg[0][oklatRTOFS.min()-2:oklatRTOFS.max()+2,oklonRTOFS.min()-2:oklonRTOFS.max()+2],\
                 meshlatRTOFSg[0][oklonRTOFS.min()-2:oklonRTOFS.max()+2,oklatRTOFS.min()-2:oklatRTOFS.max()+2].T,\
                 '.',color='green')
-        ax.plot(lonRTOFSg[oklonRTOFS],latRTOFSg[oklatRTOFS],'og',\
-            markersize=8,markeredgecolor='k',\
-            label='RTOFS grid points \n nx = ' + str(oklonRTOFS) \
-            + '\n ny = ' + str(oklatRTOFS) \
-            + '\n [day][hour] = ' + str(np.unique([str(i)[8:10] for i in timeRTOFS])) \
-               + str([str(i)[11:13]for i in timeRTOFS]))
-        ax.plot(meshlonCOP[0][oklatCOP.min()-2:oklatCOP.max()+2,oklonCOP.min()-2:oklonCOP.max()+2],\
-            meshlatCOP[0][oklonCOP.min()-2:oklonCOP.max()+2,oklatCOP.min()-2:oklatCOP.max()+2].T,\
-            '.',color='darkorchid')
-        ax.plot(lonCOP[oklonCOP],latCOP[oklatCOP],'o',color='darkorchid',\
-            markersize=8,markeredgecolor='k',\
-            label='Copernicus grid points \n nx = '+ str(oklonCOP_glob) \
-            + '\n ny = '+str(oklatCOP_glob) \
-            + '\n [day][hour] = ' + str([str(i)[8:10]for i in timeCOP]) \
-            + str([str(i)[11:13]for i in timeCOP]))
+            ax.plot(lonRTOFSg[oklonRTOFS],latRTOFSg[oklatRTOFS],'og',\
+                markersize=8,markeredgecolor='k',\
+                label='RTOFS grid points \n nx = ' + str(oklonRTOFS) \
+                + '\n ny = ' + str(oklatRTOFS) \
+                + '\n [day][hour] = ' + str(np.unique([str(i)[8:10] for i in timeRTOFS])) \
+                + str([str(i)[11:13]for i in timeRTOFS]))
+        if len(oklatCOP) != 0:
+            ax.plot(meshlonCOP[0][oklatCOP.min()-2:oklatCOP.max()+2,oklonCOP.min()-2:oklonCOP.max()+2],\
+                meshlatCOP[0][oklonCOP.min()-2:oklonCOP.max()+2,oklatCOP.min()-2:oklatCOP.max()+2].T,\
+                '.',color='darkorchid')
+            ax.plot(lonCOP[oklonCOP],latCOP[oklatCOP],'o',color='darkorchid',\
+                markersize=8,markeredgecolor='k',\
+                label='Copernicus grid points \n nx = '+ str(oklonCOP_glob) \
+                + '\n ny = '+str(oklatCOP_glob) \
+                + '\n [day][hour] = ' + str([str(i)[8:10]for i in timeCOP]) \
+                + str([str(i)[11:13]for i in timeCOP]))
         ax.legend(loc='upper center',bbox_to_anchor=(0.5,-0.3))
 
         folder = '/www/web/rucool/hurricane/Hurricane_season_2019/' + ti.strftime('%b-%d') + '/'

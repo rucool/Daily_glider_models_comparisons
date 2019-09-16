@@ -161,7 +161,7 @@ zip_files = [f for f in zip_files if np.logical_or('al' in f,'AL' in f)]
 #%% Map of North Atlantic with glider tracks
 col = ['red','darkcyan','gold','m','darkorange','crimson','lime',\
        'darkorchid','brown','sienna','yellow','orchid','gray',\
-       'red','darkcyan','gold','m','darkorange','crimson','lime',\
+       'darkcyan','gold','m','darkorange','crimson','lime','red',\
        'darkorchid','brown','sienna','yellow','orchid','gray']
 mark = ['o','*','p','^','D','X','o','*','p','^','D','X','o',\
         'o','*','p','^','D','X','o','*','p','^','D','X','o']
