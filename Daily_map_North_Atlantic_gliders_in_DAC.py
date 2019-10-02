@@ -7,7 +7,6 @@ Created on Wed Jul 17 15:00:04 2019
 """
 
 #%% User input
-
 # lat and lon bounds
 lon_lim = [-110.0,-10.0]
 lat_lim = [15.0,45.0]
@@ -21,7 +20,6 @@ url_nhc = 'https://www.nhc.noaa.gov/gis/'
 bath_file = '/home/aristizabal/bathymetry_files/GEBCO_2014_2D_-100.0_0.0_-10.0_70.0.nc'
 
 #%%
-
 from erddapy import ERDDAP
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -34,6 +32,7 @@ import urllib.request
 from bs4 import BeautifulSoup
 import glob
 from zipfile import ZipFile
+import cmocean
 
 # Do not produce figures on screen
 plt.switch_backend('agg')
@@ -52,7 +51,6 @@ ti = datetime.today() - timedelta(1)
 tini = datetime(ti.year,ti.month,ti.day)
 
 #%% Look for datasets in IOOS glider dac
-
 print('Looking for glider data sets')
 e = ERDDAP(server = url_glider)
 
@@ -81,10 +79,37 @@ gliders = search['Dataset ID'].values
 msg = 'Found {} Glider Datasets:\n\n{}'.format
 print(msg(len(gliders), '\n'.join(gliders)))
 
+#% get entire deployment (lat and lon) during hurricane season
+
+# Time bounds
+min_time2 = '2019-06-01T00:00:00Z'
+max_time2 = '2019-11-30T00:00:00Z'
+
+# Search constraints
+kw = {
+    'min_lon': lon_lim[0],
+    'max_lon': lon_lim[1],
+    'min_lat': lat_lim[0],
+    'max_lat': lat_lim[1],
+    'min_time': min_time2,
+    'max_time': max_time2,
+}
+
+search_url = e.get_search_url(response='csv', **kw)
+
+# Grab the results
+search = pd.read_csv(search_url)
+
+# Extract the IDs
+gliders_all = search['Dataset ID'].values
+
+msg = 'Found {} Glider Datasets:\n\n{}'.format
+print(msg(len(gliders_all), '\n'.join(gliders_all)))
+
 # Setting constraints
 constraints = {
-        'time>=': tini,
-        'time<=': tend,
+        'time>=': min_time2,
+        'time<=': max_time2,
         'latitude>=': lat_lim[0],
         'latitude<=': lat_lim[1],
         'longitude>=': lon_lim[0],
@@ -166,13 +191,13 @@ col = ['red','darkcyan','gold','m','darkorange','crimson','lime',\
 mark = ['o','*','p','^','D','X','o','*','p','^','D','X','o',\
         'o','*','p','^','D','X','o','*','p','^','D','X','o']
 
+lev = np.arange(-9000,9100,100)
 fig, ax = plt.subplots(figsize=(10, 5))
-plt.contour(bath_lon,bath_lat,bath_elev,[0],colors='k')
-plt.contourf(bath_lon,bath_lat,bath_elev,cmap='Blues_r')
-plt.contourf(bath_lon,bath_lat,bath_elev,[0,10000],colors='seashell')
+plt.contourf(bath_lon,bath_lat,bath_elev,lev,cmap=cmocean.cm.topo)
 plt.yticks([])
 plt.xticks([])
 plt.axis([-100,-10,0,50])
+ax.set_aspect(1)
 plt.title('Active Glider Deployments on ' + str(tini)[0:10],fontsize=20)
 
 #%%
@@ -193,14 +218,7 @@ for i,f in enumerate(zip_files):
             print(s.get_text("coordinates"))
             lon_forec_track[i] = float(s.get_text("coordinates").split('coordinates')[1].split(',')[0])
             lat_forec_track[i] = float(s.get_text("coordinates").split('coordinates')[1].split(',')[1])
-        '''
-        # Get time stamp
-        time = []
-        for i,s in enumerate(soup.find_all("td")):
-            #print(s.get_text(""))
-            if len(s.get_text(' ').split('Valid at:'))>1:
-                time.append(s.get_text(' ').split('Valid at:')[1])
-        '''
+
         plt.plot(lon_forec_track, lat_forec_track,'.-',color='darkorange')
 
     else:
@@ -239,13 +257,7 @@ for i,f in enumerate(zip_files):
                 print(s.get_text("coordinates"))
                 lon_best_track[i] = float(s.get_text("coordinates").split('coordinates')[1].split(',')[0])
                 lat_best_track[i] = float(s.get_text("coordinates").split('coordinates')[1].split(',')[1])
-            '''
-            # get time stamp
-            time_best_track = []
-            for i,s in enumerate(soup.find_all("td")):
-                if 'UTC' in s.get_text(' '):
-                    time_best_track.append(s.get_text(' '))
-            '''
+
             #get name
             for f in soup.find_all('name'):
                 if 'AL' in f.get_text('name'):
@@ -255,25 +267,35 @@ for i,f in enumerate(zip_files):
             plt.text(np.mean(lon_best_track),np.mean(lat_best_track),name.split(' ')[-1],fontsize=14,\
                      fontweight = 'bold')
 
-for i,id in enumerate(gliders):
-    print('Reading ' + id)
-    e.dataset_id = id
-    e.constraints = constraints
-    e.variables = variables
+i = 0
+for j,id_all in enumerate(gliders_all):
+    id = [id for id in gliders if id == id_all]
+    if len(id) != 0:
+        i += 1
+        print(i-1)
+        print(id[0])     
+        e.dataset_id = id[0]
+        e.constraints = constraints
+        e.variables = variables
 
-    # Checking data frame is not empty
-    df = e.to_pandas()
-    if len(df.index) != 0:
+        df = e.to_pandas()
+        if len(df.index) != 0:
 
-        # Convertimg glider data to data frame
-        df = e.to_pandas(
-        parse_dates=True,
-        skiprows=(1,)  # units information can be dropped.
-            ).dropna()
-        ax.plot(np.nanmean(df['longitude (degrees_east)']),\
-                np.nanmean(df['latitude (degrees_north)']),'-',color=col[i],\
-                marker = mark[i],markeredgecolor = 'k',markersize=7,\
-                label=id.split('-')[0])
+            df = e.to_pandas(
+                index_col='time (UTC)',
+                parse_dates=True,
+                skiprows=(1,)  # units information can be dropped.
+                ).dropna()
+
+            print(len(df))
+
+            timeg, ind = np.unique(df.index.values,return_index=True)
+            latg = df['latitude (degrees_north)'].values[ind]
+            long = df['longitude (degrees_east)'].values[ind]
+            ax.plot(long,latg,'.-',color='darkorange',markersize=1)
+            ax.plot(long[-1],latg[-1],color=col[i-1],\
+                marker = mark[i-1],markeredgecolor = 'k',markersize=7,\
+                label=id[0].split('-')[0])
 
 plt.legend(loc='upper center',bbox_to_anchor=(1.05,1))
 folder = '/www/web/rucool/hurricane/Hurricane_season_2019/' + ti.strftime('%b-%d') + '/'

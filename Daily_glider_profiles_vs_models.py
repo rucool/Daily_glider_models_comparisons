@@ -48,6 +48,7 @@ from ftplib import FTP
 import netCDF4
 import os
 import os.path
+import cmocean
 
 # Do not produce figures on screen
 plt.switch_backend('agg')
@@ -149,22 +150,6 @@ for t in np.arange(len(nc_files_RTOFS)):
             ftp.cwd('rtofs.' + str(tini.year) + str(tini.month) + '0' + str(tini.day))
         else:
             ftp.cwd('rtofs.' + str(tini.year) + str(tini.month) + str(tini.day))
-
-    '''
-    if tend.month < 10:
-        if tend.day < 10:
-            if tini.day < 10:
-                ftp.cwd('rtofs.' + str(tini.year) + '0' + str(tini.month) + '0' + str(tini.day))
-            else:
-                ftp.cwd('rtofs.' + str(tini.year) + '0' + str(tini.month) + str(tini.day))
-        else:
-            ftp.cwd('rtofs.' + str(tini.year) + '0' + str(tini.month) + str(tini.day))
-    else:
-        if tend.day < 10:
-            ftp.cwd('rtofs.' + str(tini.year) + str(tini.month) + '0' + str(tini.day))
-        else:
-            ftp.cwd('rtofs.' + str(tini.year) + str(tini.month) + str(tini.day))
-    '''
 
     # Download nc files
     print('loading ' + file)
@@ -543,9 +528,11 @@ for id in gliders:
         bath_elevsub = bath_elevs[:,oklonbath]
 
         ax = plt.subplot(grid[0:2,1])
-        plt.contour(bath_lonsub,bath_latsub,bath_elevsub,[0],colors='k')
-        plt.contourf(bath_lonsub,bath_latsub,bath_elevsub,cmap='Blues_r')
-        plt.contourf(bath_lonsub,bath_latsub,bath_elevsub,[0,10000],colors='seashell')
+        lev = np.arange(-9000,9100,100)
+        plt.contourf(bath_lonsub,bath_latsub,bath_elevsub,lev,cmap=cmocean.cm.topo)
+        #plt.contour(bath_lonsub,bath_latsub,bath_elevsub,[0],colors='k')
+        #plt.contourf(bath_lonsub,bath_latsub,bath_elevsub,cmap='Blues_r')
+        #plt.contourf(bath_lonsub,bath_latsub,bath_elevsub,[0,10000],colors='seashell')
         #plt.axis([np.min(long)-5,np.max(long)+5,np.min(latg)-5,np.max(latg)+5])
         plt.plot(long,latg,'.-',color='orange',label='Glider track',\
              markersize=3)
@@ -643,10 +630,12 @@ for id in gliders:
         bath_elevs = bath_elev[oklatbath,:]
         bath_elevsub = bath_elevs[:,oklonbath]
 
-        plt.contour(bath_lonsub,bath_latsub,bath_elevsub,[0],colors='k')
-        plt.contourf(bath_lonsub,bath_latsub,bath_elevsub,cmap='Blues_r')
-        plt.contourf(bath_lonsub,bath_latsub,bath_elevsub,[0,10000],colors='seashell')
-        plt.axis([np.min(long)-5,np.max(long)+5,np.min(latg)-5,np.max(latg)+5])
+        lev = np.arange(-9000,9100,100)
+        plt.contourf(bath_lonsub,bath_latsub,bath_elevsub,lev,cmap=cmocean.cm.topo)
+        #plt.contour(bath_lonsub,bath_latsub,bath_elevsub,[0],colors='k')
+        #plt.contourf(bath_lonsub,bath_latsub,bath_elevsub,cmap='Blues_r')
+        #plt.contourf(bath_lonsub,bath_latsub,bath_elevsub,[0,10000],colors='seashell')
+        #plt.axis([np.min(long)-5,np.max(long)+5,np.min(latg)-5,np.max(latg)+5])
         plt.plot(long,latg,'.-',color='orange',label='Glider track',\
              markersize=3)
         if len(oklatRTOFS) != 0:
