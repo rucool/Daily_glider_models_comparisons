@@ -29,6 +29,7 @@ from datetime import datetime, timedelta
 import numpy as np
 import xarray as xr
 import netCDF4
+import cmocean
 
 # Do not produce figures on screen
 plt.switch_backend('agg')
@@ -331,6 +332,7 @@ for id in gliders:
         plt.plot(np.nanmean(target_tempdoppio,axis=1),np.nanmean(target_zdoppio,axis=1),'.-',color='maroon',markersize=12,linewidth=2,\
                  label='Doppio'+' '+str(timedoppio[0].year)+' '+'['+str(timedoppio[0])[5:13]+','+str(timedoppio[-1])[5:13]+']')
         plt.xlabel('Temperature ($^oC$)',fontsize=20)
+        plt.ylabel('Depth (m)',fontsize=20)
         plt.title('Temperature Profile ' + id,fontsize=20)
         plt.ylim([-np.nanmax(depthg)+100,0])
         plt.ylim([-np.nanmax(depthg)-100,0.1])
@@ -353,9 +355,11 @@ for id in gliders:
         bath_elevsub = bath_elevs[:,oklonbath]
 
         ax = plt.subplot(grid[0:2,1])
-        plt.contour(bath_lonsub,bath_latsub,bath_elevsub,[0],colors='k')
-        plt.contourf(bath_lonsub,bath_latsub,bath_elevsub,cmap='Blues_r')
-        plt.contourf(bath_lonsub,bath_latsub,bath_elevsub,[0,10000],colors='seashell')
+        lev = np.arange(-9000,9100,100)
+        plt.contourf(bath_lonsub,bath_latsub,bath_elevsub,lev,cmap=cmocean.cm.topo)
+        #plt.contour(bath_lonsub,bath_latsub,bath_elevsub,[0],colors='k')
+        #plt.contourf(bath_lonsub,bath_latsub,bath_elevsub,cmap='Blues_r')
+        #plt.contourf(bath_lonsub,bath_latsub,bath_elevsub,[0,10000],colors='seashell')
         #plt.axis([np.min(long)-5,np.max(long)+5,np.min(latg)-5,np.max(latg)+5])
         plt.plot(long,latg,'.-',color='orange',label='Glider track',\
                  markersize=3)
@@ -422,9 +426,11 @@ for id in gliders:
         bath_elevsub = bath_elevs[:,oklonbath]
 
         ax = plt.subplot(grid[0:2,1])
-        plt.contour(bath_lonsub,bath_latsub,bath_elevsub,[0],colors='k')
-        plt.contourf(bath_lonsub,bath_latsub,bath_elevsub,cmap='Blues_r')
-        plt.contourf(bath_lonsub,bath_latsub,bath_elevsub,[0,10000],colors='seashell')
+        lev = np.arange(-9000,9100,100)
+        plt.contourf(bath_lonsub,bath_latsub,bath_elevsub,lev,cmap=cmocean.cm.topo)
+        #plt.contour(bath_lonsub,bath_latsub,bath_elevsub,[0],colors='k')
+        #plt.contourf(bath_lonsub,bath_latsub,bath_elevsub,cmap='Blues_r')
+        #plt.contourf(bath_lonsub,bath_latsub,bath_elevsub,[0,10000],colors='seashell')
         #plt.axis([np.min(long)-5,np.max(long)+5,np.min(latg)-5,np.max(latg)+5])
         plt.plot(long,latg,'.-',color='orange',label='Glider track',\
                  markersize=3)
