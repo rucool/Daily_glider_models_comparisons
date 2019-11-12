@@ -331,10 +331,11 @@ for id in gliders:
         plt.grid('on')
 
         # lat and lon bounds of box to draw
-        minlonamseas = np.min(meshlon_amseasg[oklat_amseas.min()-2:oklat_amseas.max()+2,oklon_amseas.min()-2:oklon_amseas.max()+2])
-        maxlonamseas = np.max(meshlon_amseasg[oklat_amseas.min()-2:oklat_amseas.max()+2,oklon_amseas.min()-2:oklon_amseas.max()+2])
-        minlatamseas = np.min(meshlat_amseasg[oklon_amseas.min()-2:oklon_amseas.max()+2,oklat_amseas.min()-2:oklat_amseas.max()+2])
-        maxlatamseas = np.max(meshlat_amseasg[oklon_amseas.min()-2:oklon_amseas.max()+2,oklat_amseas.min()-2:oklat_amseas.max()+2])
+        if len(oklat_amseas) != 0:
+                minlonamseas = np.min(meshlon_amseasg[oklat_amseas.min()-2:oklat_amseas.max()+2,oklon_amseas.min()-2:oklon_amseas.max()+2])
+                maxlonamseas = np.max(meshlon_amseasg[oklat_amseas.min()-2:oklat_amseas.max()+2,oklon_amseas.min()-2:oklon_amseas.max()+2])
+                minlatamseas = np.min(meshlat_amseasg[oklon_amseas.min()-2:oklon_amseas.max()+2,oklat_amseas.min()-2:oklat_amseas.max()+2])
+                maxlatamseas = np.max(meshlat_amseasg[oklon_amseas.min()-2:oklon_amseas.max()+2,oklat_amseas.min()-2:oklat_amseas.max()+2])
 
         # Getting subdomain for plotting glider track on bathymetry
         oklatbath = np.logical_and(bath_lat >= np.min(latg)-5,bath_lat <= np.max(latg)+5)
@@ -354,10 +355,11 @@ for id in gliders:
         plt.axis([np.min(long)-5,np.max(long)+5,np.min(latg)-5,np.max(latg)+5])
         plt.plot(long,latg,'.-',color='orange',label='Glider track',\
              markersize=3)
-        rect = patches.Rectangle((minlonamseas,minlatamseas),\
+        if len(oklat_amseas) != 0:
+                rect = patches.Rectangle((minlonamseas,minlatamseas),\
                             maxlonamseas-minlonamseas,maxlatamseas-minlatamseas,\
                             linewidth=1,edgecolor='k',facecolor='none')
-        ax.add_patch(rect)
+                ax.add_patch(rect)
         plt.title('Glider track and model grid positions',fontsize=20)
         plt.axis('scaled')
         plt.legend(loc='upper center',bbox_to_anchor=(1.1,1))
@@ -404,10 +406,11 @@ for id in gliders:
         plt.grid('on')
 
         # lat and lon bounds of box to draw
-        minlonamseas = np.min(meshlon_amseasg[oklat_amseas.min()-2:oklat_amseas.max()+2,oklon_amseas.min()-2:oklon_amseas.max()+2])
-        maxlonamseas = np.max(meshlon_amseasg[oklat_amseas.min()-2:oklat_amseas.max()+2,oklon_amseas.min()-2:oklon_amseas.max()+2])
-        minlatamseas = np.min(meshlat_amseasg[oklon_amseas.min()-2:oklon_amseas.max()+2,oklat_amseas.min()-2:oklat_amseas.max()+2])
-        maxlatamseas = np.max(meshlat_amseasg[oklon_amseas.min()-2:oklon_amseas.max()+2,oklat_amseas.min()-2:oklat_amseas.max()+2])
+        if len(oklat_amseas) != 0:
+                minlonamseas = np.min(meshlon_amseasg[oklat_amseas.min()-2:oklat_amseas.max()+2,oklon_amseas.min()-2:oklon_amseas.max()+2])
+                maxlonamseas = np.max(meshlon_amseasg[oklat_amseas.min()-2:oklat_amseas.max()+2,oklon_amseas.min()-2:oklon_amseas.max()+2])
+                minlatamseas = np.min(meshlat_amseasg[oklon_amseas.min()-2:oklon_amseas.max()+2,oklat_amseas.min()-2:oklat_amseas.max()+2])
+                maxlatamseas = np.max(meshlat_amseasg[oklon_amseas.min()-2:oklon_amseas.max()+2,oklat_amseas.min()-2:oklat_amseas.max()+2])
 
         # Getting subdomain for plotting glider track on bathymetry
         oklatbath = np.logical_and(bath_lat >= np.min(latg)-5,bath_lat <= np.max(latg)+5)
@@ -427,10 +430,11 @@ for id in gliders:
         plt.axis([np.min(long)-5,np.max(long)+5,np.min(latg)-5,np.max(latg)+5])
         plt.plot(long,latg,'.-',color='orange',label='Glider track',\
              markersize=3)
-        rect = patches.Rectangle((minlonamseas,minlatamseas),\
+        if len(oklat_amseas) != 0:
+                rect = patches.Rectangle((minlonamseas,minlatamseas),\
                             maxlonamseas-minlonamseas,maxlatamseas-minlatamseas,\
                             linewidth=1,edgecolor='k',facecolor='none')
-        ax.add_patch(rect)
+                ax.add_patch(rect)
         plt.title('Glider track and model grid positions',fontsize=20)
         plt.axis('scaled')
         plt.legend(loc='upper center',bbox_to_anchor=(1.1,1))
