@@ -13,7 +13,7 @@ lat_lim = [5.0,32.0]
 
 # urls
 url_glider = 'https://data.ioos.us/gliders/erddap'
-url_amseas = 'https://ecowatch.ncddc.noaa.gov/thredds/dodsC/amseas/ncom_relo_amseas_u_' #2019110300_t000.nc
+url_amseas = 'https://ecowatch.ncddc.noaa.gov/thredds/dodsC/amseas/ncom_relo_amseas_u_' 
 
 # Bathymetry file
 bath_file = '/home/aristizabal/bathymetry_files/GEBCO_2014_2D_-100.0_0.0_-10.0_70.0.nc'
