@@ -79,8 +79,8 @@ print(msg(len(gliders), '\n'.join(gliders)))
 
 # Setting constraints
 constraints = {
-        'time>=': tini,
-        'time<=': tend,
+        'time>=': str(tini),
+        'time<=': str(tend),
         'latitude>=': lat_lim[0],
         'latitude<=': lat_lim[1],
         'longitude>=': lon_lim[0],
@@ -220,12 +220,13 @@ for id in gliders:
         # Narrowing time window of Doppio to coincide with glider time window
         tmin = mdates.num2date(mdates.date2num(timeg[0]))
         tmax = mdates.num2date(mdates.date2num(timeg[-1]))
-        oktime_doppio = np.where(np.logical_and(mdates.date2num(tdoppio) >= mdates.date2num(tmin),\
-                                         mdates.date2num(tdoppio) <= mdates.date2num(tmax)))
+        oktime_doppio = np.where(np.logical_and(tdoppio >= tmin,tdoppio <= tmax))
         timedoppio = tdoppio[oktime_doppio]
 
         # Changing times to timestamp
         tstamp_glider = [mdates.date2num(timeg[i]) for i in np.arange(len(timeg))]
+        timedoppio = [datetime(timedoppio[i].year,timedoppio[i].month,timedoppio[i].day,\
+                    timedoppio[i].hour) for i in np.arange(len(timedoppio))]
         tstamp_doppio = [mdates.date2num(timedoppio[i]) for i in np.arange(len(timedoppio))]
 
         # interpolating glider lon and lat to lat and lon on doppio time
@@ -387,7 +388,7 @@ for id in gliders:
         plt.axis('scaled')
         ax.legend(loc='upper center',bbox_to_anchor=(0.5,-0.3))
 
-        folder = '/www/web/rucool/hurricane/Hurricane_season_2019/' + ti.strftime('%b-%d') + '/Doppio/'
+        folder = '/www/web/rucool/hurricane/Hurricane_season_' + ti.strftime('%Y') + '/' + ti.strftime('%b-%d') + '/Doppio/'
         file = folder+'temp_profile_' + id + '_' + str(tini).split()[0] + '_' + str(tend).split()[0]
         plt.savefig(file,bbox_inches = 'tight',pad_inches = 0.1)
 
@@ -458,6 +459,6 @@ for id in gliders:
         plt.axis('scaled')
         ax.legend(loc='upper center',bbox_to_anchor=(0.5,-0.3))
 
-        folder = '/www/web/rucool/hurricane/Hurricane_season_2019/' + ti.strftime('%b-%d') + '/Doppio/'
+        folder = '/www/web/rucool/hurricane/Hurricane_season_' + ti.strftime('%Y') + '/' + ti.strftime('%b-%d') + '/Doppio/'
         file = folder+'salt_profile_' + id + '_' + str(tini).split()[0] + '_' + str(tend).split()[0]
         plt.savefig(file,bbox_inches = 'tight',pad_inches = 0.1)

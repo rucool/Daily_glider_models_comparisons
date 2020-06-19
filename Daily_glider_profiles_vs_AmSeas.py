@@ -92,8 +92,8 @@ print(msg(len(gliders), '\n'.join(gliders)))
 
 # Setting constraints
 constraints = {
-        'time>=': tini,
-        'time<=': tend,
+        'time>=': str(tini),
+        'time<=': str(tend),
         'latitude>=': lat_lim[0],
         'latitude<=': lat_lim[1],
         'longitude>=': lon_lim[0],
@@ -380,7 +380,7 @@ for id in gliders:
                   + str([str(i)[11:13]for i in time_amseas]))
         ax.legend(loc='upper center',bbox_to_anchor=(0.5,-0.3))
 
-        folder = '/www/web/rucool/hurricane/Hurricane_season_2019/' + ti.strftime('%b-%d') + '/AmSeas/'
+        folder = '/www/web/rucool/hurricane/Hurricane_season_' + ti.strftime('%Y') + '/' + ti.strftime('%b-%d') + '/AmSeas/'
         file = folder+'temp_profile_' + id + '_' + str(tini).split()[0] + '_' + str(tend).split()[0]
         plt.savefig(file,bbox_inches = 'tight',pad_inches = 0.1)
 
@@ -455,6 +455,6 @@ for id in gliders:
                   + str([str(i)[11:13]for i in time_amseas]))
         ax.legend(loc='upper center',bbox_to_anchor=(0.5,-0.3))
 
-        folder = '/www/web/rucool/hurricane/Hurricane_season_2019/' + ti.strftime('%b-%d') + '/AmSeas/'
+        folder = '/www/web/rucool/hurricane/Hurricane_season_' + ti.strftime('%Y') + '/' + ti.strftime('%b-%d') + '/AmSeas/'
         file = folder+'salt_profile_' + id + '_' + str(tini).split()[0] + '_' + str(tend).split()[0]
         plt.savefig(file,bbox_inches = 'tight',pad_inches = 0.1)

@@ -13,7 +13,8 @@ lat_lim = [15.0,45.0]
 
 # urls
 url_glider = 'https://data.ioos.us/gliders/erddap'
-url_GOFS = 'http://tds.hycom.org/thredds/dodsC/GLBv0.08/expt_93.0/ts3z'
+#url_GOFS = 'http://tds.hycom.org/thredds/dodsC/GLBv0.08/expt_93.0/ts3z'
+url_GOFS = 'https://tds.hycom.org/thredds/dodsC/GLBy0.08/latest'
 #url_RTOFS = 'https://nomads.ncep.noaa.gov:9090/dods/rtofs/rtofs_global'
 
 # FTP server RTOFS
@@ -65,6 +66,12 @@ tend = datetime(te.year,te.month,te.day)
 ti = datetime.today() - timedelta(1)
 tini = datetime(ti.year,ti.month,ti.day)
 
+#te = datetime.today() + timedelta(1)
+#tend = datetime(te.year,te.month,te.day)
+
+#ti = datetime.today() 
+#tini = datetime(ti.year,ti.month,ti.day)
+
 #%% Look for datasets in IOOS glider dac
 print('Looking for glider data sets')
 e = ERDDAP(server = url_glider)
@@ -96,8 +103,8 @@ print(msg(len(gliders), '\n'.join(gliders)))
 
 # Setting constraints
 constraints = {
-        'time>=': tini,
-        'time<=': tend,
+        'time>=': str(tini),
+        'time<=': str(tend),
         'latitude>=': lat_lim[0],
         'latitude<=': lat_lim[1],
         'longitude>=': lon_lim[0],
@@ -281,8 +288,8 @@ for id in gliders:
         # Narrowing time window of GOFS 3.1 to coincide with glider time window
         tmin = mdates.num2date(mdates.date2num(timeg[0]))
         tmax = mdates.num2date(mdates.date2num(timeg[-1]))
-        oktimeGOFS = np.where(np.logical_and(mdates.date2num(tGOFS) >= mdates.date2num(tmin),\
-                                         mdates.date2num(tGOFS) <= mdates.date2num(tmax)))
+        oktimeGOFS = np.where(np.logical_and(tGOFS >= tmin,\
+                                         tGOFS <= tmax))
         timeGOFS = tGOFS[oktimeGOFS]
 
         # Narrowing time window of RTOFS to coincide with glider time window
@@ -295,6 +302,8 @@ for id in gliders:
 
         # Changing times to timestamp
         tstamp_glider = [mdates.date2num(timeg[i]) for i in np.arange(len(timeg))]
+        timeGOFS = [datetime(timeGOFS[i].year,timeGOFS[i].month,timeGOFS[i].day,\
+                    timeGOFS[i].hour) for i in np.arange(len(timeGOFS))]
         tstamp_GOFS = [mdates.date2num(timeGOFS[i]) for i in np.arange(len(timeGOFS))]
         tstamp_RTOFS = [mdates.date2num(timeRTOFS[i]) for i in np.arange(len(timeRTOFS))]
 
@@ -581,7 +590,7 @@ for id in gliders:
                 + str([str(i)[11:13]for i in timeCOP]))
         ax.legend(loc='upper center',bbox_to_anchor=(0.5,-0.3))
 
-        folder = '/www/web/rucool/hurricane/Hurricane_season_2019/' + ti.strftime('%b-%d') + '/'
+        folder = '/www/web/rucool/hurricane/Hurricane_season_' + ti.strftime('%Y') + '/' + ti.strftime('%b-%d') + '/'
         file = folder+'temp_profile_' + id + '_' + str(tini).split()[0] + '_' + str(tend).split()[0]
         plt.savefig(file,bbox_inches = 'tight',pad_inches = 0.1)
 
@@ -683,6 +692,6 @@ for id in gliders:
                 + str([str(i)[11:13]for i in timeCOP]))
         ax.legend(loc='upper center',bbox_to_anchor=(0.5,-0.3))
 
-        folder = '/www/web/rucool/hurricane/Hurricane_season_2019/' + ti.strftime('%b-%d') + '/'
+        folder = '/www/web/rucool/hurricane/Hurricane_season_' + ti.strftime('%Y') + '/' + ti.strftime('%b-%d') + '/'
         file = folder+'salt_profile_' + id + '_' + str(tini).split()[0] + '_' + str(tend).split()[0]
         plt.savefig(file,bbox_inches = 'tight',pad_inches = 0.1)
