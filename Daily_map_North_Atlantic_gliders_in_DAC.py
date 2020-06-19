@@ -82,8 +82,8 @@ print(msg(len(gliders), '\n'.join(gliders)))
 #% get entire deployment (lat and lon) during hurricane season
 
 # Time bounds
-min_time2 = '2020-05-15T00:00:00Z'
-max_time2 = '2020-11-30T00:00:00Z'
+min_time2 = str(tini.year) + '-05-15T00:00:00Z'
+max_time2 = str(tini.year) + '-11-30T00:00:00Z'
 
 # Search constraints
 kw = {
@@ -298,7 +298,7 @@ for j,id_all in enumerate(gliders_all):
                 label=id[0].split('-')[0])
 
 plt.legend(loc='upper center',bbox_to_anchor=(1.05,1))
-folder = '/www/web/rucool/hurricane/Hurricane_season_2020/' + ti.strftime('%b-%d') + '/'
+folder = '/www/web/rucool/hurricane/Hurricane_season_' + ti.strftime('%Y') + '/' + ti.strftime('%b-%d') + '/'
 file = folder + 'Daily_map_North_Atlantic_gliders_in_DAC_' + str(tini).split()[0] + '_' + str(tend).split()[0] + '.png'
 plt.savefig(file,bbox_inches = 'tight',pad_inches = 0.1)
 
