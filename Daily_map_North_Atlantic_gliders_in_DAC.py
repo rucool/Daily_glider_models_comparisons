@@ -264,8 +264,7 @@ for i,f in enumerate(zip_files):
                     name = f.get_text('name')
 
             plt.plot(lon_best_track,lat_best_track,'or',markersize=3)
-            plt.text(np.mean(lon_best_track),np.mean(lat_best_track),name.split(' ')[-1],fontsize=14,\
-                     fontweight = 'bold')
+            plt.text(np.mean(lon_best_track),np.mean(lat_best_track),name.split(' ')[-1],fontsize=14,fontweight = 'bold',bbox=dict(facecolor='white',alpha=0.3))
 
 i = 0
 for j,id_all in enumerate(gliders_all):

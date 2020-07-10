@@ -128,13 +128,19 @@ e = ERDDAP(
 
 #%% Read GOFS 3.1 output
 print('Retrieving coordinates from GOFS 3.1')
-GOFS31 = xr.open_dataset(url_GOFS,decode_times=False)
-
-latGOFS = GOFS31.lat[:]
-lonGOFS = GOFS31.lon[:]
-depthGOFS = GOFS31.depth[:]
-ttGOFS = GOFS31.time
-tGOFS = netCDF4.num2date(ttGOFS[:],ttGOFS.units)
+try:
+    GOFS31 = xr.open_dataset(url_GOFS,decode_times=False)
+    
+    latGOFS = GOFS31.lat[:]
+    lonGOFS = GOFS31.lon[:]
+    depthGOFS = GOFS31.depth[:]
+    ttGOFS = GOFS31.time
+    tGOFS = netCDF4.num2date(ttGOFS[:],ttGOFS.units)
+except Exception as err:
+    latGOFS = np.nan
+    lonGOFS = np.nan
+    depthGOFS = np.nan
+    tGOFS = np.nan 
 
 #%% load RTOFS nc files
 print('Loading 6 hourly RTOFS nc files from FTP server')
@@ -288,9 +294,13 @@ for id in gliders:
         # Narrowing time window of GOFS 3.1 to coincide with glider time window
         tmin = mdates.num2date(mdates.date2num(timeg[0]))
         tmax = mdates.num2date(mdates.date2num(timeg[-1]))
-        oktimeGOFS = np.where(np.logical_and(tGOFS >= tmin,\
+        if isinstance(GOFS31,float): 
+            oktimeGOFS = np.nan
+            timeGOFS = np.nan
+        else:
+            oktimeGOFS = np.where(np.logical_and(tGOFS >= tmin,\
                                          tGOFS <= tmax))
-        timeGOFS = tGOFS[oktimeGOFS]
+            timeGOFS = tGOFS[oktimeGOFS]
 
         # Narrowing time window of RTOFS to coincide with glider time window
         #tmin = tini
@@ -302,9 +312,12 @@ for id in gliders:
 
         # Changing times to timestamp
         tstamp_glider = [mdates.date2num(timeg[i]) for i in np.arange(len(timeg))]
-        timeGOFS = [datetime(timeGOFS[i].year,timeGOFS[i].month,timeGOFS[i].day,\
+        if isinstance(GOFS31,float):
+            tstampGOFS = np.nan
+        else:
+            timeGOFS = [datetime(timeGOFS[i].year,timeGOFS[i].month,timeGOFS[i].day,\
                     timeGOFS[i].hour) for i in np.arange(len(timeGOFS))]
-        tstamp_GOFS = [mdates.date2num(timeGOFS[i]) for i in np.arange(len(timeGOFS))]
+            tstamp_GOFS = [mdates.date2num(timeGOFS[i]) for i in np.arange(len(timeGOFS))]
         tstamp_RTOFS = [mdates.date2num(timeRTOFS[i]) for i in np.arange(len(timeRTOFS))]
 
         # interpolating glider lon and lat to lat and lon on GOFS 3.1 time
