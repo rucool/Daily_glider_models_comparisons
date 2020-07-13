@@ -528,8 +528,10 @@ for id in gliders:
         plt.ylabel('Depth (m)',fontsize=20)
         plt.xlabel('Temperature ($^oC$)',fontsize=20)
         plt.title('Temperature Profile ' + id,fontsize=20)
-        plt.ylim([-np.nanmax(depthg)+100,0])
-        plt.ylim([-np.nanmax(depthg)-100,0.1])
+        if np.nanmax(depthg) <= 100:
+            plt.ylim([-np.nanmax(depthg)-30,0.1])
+        else:
+            plt.ylim([-np.nanmax(depthg)-100,0.1])
         plt.legend(loc='lower left',bbox_to_anchor=(-0.2,0.0),fontsize=14)
         plt.grid('on')
 
@@ -630,8 +632,10 @@ for id in gliders:
         plt.ylabel('Depth (m)',fontsize=20)
         plt.xlabel('Salinity',fontsize=20)
         plt.title('Salinity Profile ' + id,fontsize=20)
-        plt.ylim([-np.nanmax(depthg)+100,0])
-        plt.ylim([-np.nanmax(depthg)-100,0.1])
+        if np.nanmax(depthg) <= 100:
+            plt.ylim([-np.nanmax(depthg)-30,0.1])
+        else:
+            plt.ylim([-np.nanmax(depthg)-100,0.1])
         plt.legend(loc='lower left',bbox_to_anchor=(-0.2,0.0),fontsize=14)
         plt.grid('on')
 
