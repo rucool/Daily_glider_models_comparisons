@@ -208,12 +208,19 @@ for id in gliders:
     if len(df.index) != 0 :
 
         # Converting glider data to data frame
+        '''
         df = e.to_pandas(
                 index_col='time (UTC)',
                 parse_dates=True,
                 skiprows=(1,)  # units information can be dropped.
                 ).dropna()
+        '''
 
+        df = e.to_pandas(
+                index_col='time (UTC)',
+                parse_dates=True,
+                skiprows=(1,)  # units information can be dropped.
+                )
 
         # Coverting glider vectors into arrays
         timeg, ind = np.unique(df.index.values,return_index=True)
@@ -225,8 +232,8 @@ for id in gliders:
         tg = df[df.columns[3]].values
         sg = df[df.columns[4]].values
 
-        delta_z = 0.3
-        zn = np.int(np.round(np.max(dg)/delta_z))
+        delta_z = 0.25
+        zn = np.int(np.round(np.nanmax(dg)/delta_z))
 
         depthg = np.empty((zn,len(timeg)))
         depthg[:] = np.nan
