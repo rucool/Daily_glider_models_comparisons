@@ -13,7 +13,7 @@ lat_lim = [5.0,32.0]
 
 # urls
 url_glider = 'https://data.ioos.us/gliders/erddap'
-url_amseas = 'https://ecowatch.ncddc.noaa.gov/thredds/dodsC/amseas/ncom_relo_amseas_u_' 
+url_amseas = 'https://www.ncei.noaa.gov/thredds-coastal/dodsC/amseas/amseas_20130405_to_current/'
 
 # Bathymetry file
 bath_file = '/home/aristizabal/bathymetry_files/GEBCO_2014_2D_-100.0_0.0_-10.0_70.0.nc'
@@ -129,7 +129,7 @@ else:
     else:
         date = str(tini.year) + str(tini.month) + str(tini.day)
 
-file_amseas = url_amseas + date + '00_t000.nc'
+file_amseas = url_amseas + '/' + date + '/' + 'ncom_relo_amseas_u_' + date + '00_t000.nc'
 amseas = xr.open_dataset(file_amseas,decode_times=False)
 
 latamseas = amseas.lat[:]
@@ -141,9 +141,9 @@ print('Retrieving time from AMSEAS')
 tamseas = []
 for t in np.arange(0,25,3):
     if t<10:
-        file_amseas = url_amseas + date + '00_t00' + str(t) + '.nc'
+        file_amseas = url_amseas + '/' + date + '/' + 'ncom_relo_amseas_u_' + date + '00_t00' + str(t) + '.nc'
     else:
-        file_amseas = url_amseas + date + '00_t0' + str(t) + '.nc'
+        file_amseas = url_amseas + '/' + date + '/' + 'ncom_relo_amseas_u_' + date + '00_t0' + str(t) + '.nc'
     amseas = xr.open_dataset(file_amseas,decode_times=False)
     ttamseas = amseas.time
     tamseas.append(netCDF4.num2date(ttamseas[:],ttamseas.units)[0])
@@ -166,7 +166,7 @@ for id in gliders:
 
     # checking data frame is not empty
     df = e.to_pandas()
-    if len(df.index) != 0 :
+    if len(df.dropna()) != 0 :
 
         # Converting glider data to data frame
         df = e.to_pandas(
@@ -250,13 +250,19 @@ for id in gliders:
         # Narrowing time window of AMSEAS to coincide with glider time window
         tmin = mdates.num2date(mdates.date2num(timeg[0]))
         tmax = mdates.num2date(mdates.date2num(timeg[-1]))
-        oktime_amseas = np.where(np.logical_and(mdates.date2num(tamseas) >= mdates.date2num(tmin),\
-                                         mdates.date2num(tamseas) <= mdates.date2num(tmax)))[0]
+        oktime_amseas = np.where(np.logical_and(tamseas >= tmin,tamseas <= tmax))[0]
         time_amseas = tamseas[oktime_amseas]
 
         # Changing times to timestamp
         tstamp_glider = [mdates.date2num(timeg[i]) for i in np.arange(len(timeg))]
-        tstamp_amseas = [mdates.date2num(time_amseas[i]) for i in np.arange(len(time_amseas))]
+
+        if isinstance(amseas,float):
+            tstamp_amseas = np.nan
+        else:
+            time_amseas = [datetime(time_amseas[i].year,time_amseas[i].month,time_amseas[i].day,\
+                    time_amseas[i].hour) for i in np.arange(len(time_amseas))]
+            tstamp_amseas = [mdates.date2num(time_amseas[i]) for i in np.arange(len(time_amseas))]
+
 
         # interpolating glider lon and lat to lat and lon on AMSEAS time
         sublon_amseas=np.interp(tstamp_amseas,tstamp_glider,target_lon_amseas)
@@ -281,9 +287,9 @@ for id in gliders:
             for i,t in enumerate(np.arange(0,25,3)[oktime_amseas]):
                 #print(i,t)
                 if t<10:
-                    file_amseas = url_amseas + date + '00_t00' + str(t) + '.nc'
+                    file_amseas = url_amseas + '/' + date + '/' + 'ncom_relo_amseas_u_' + date + '00_t00' + str(t) + '.nc'
                 else:
-                    file_amseas = url_amseas + date + '00_t0' + str(t) + '.nc'
+                    file_amseas = url_amseas + '/' + date + '/' + 'ncom_relo_amseas_u_' + date + '00_t0' + str(t) + '.nc'
                     amseas = xr.open_dataset(file_amseas,decode_times=False)
                 print(len(oktime_amseas),' hour=',t)
                 target_temp_amseas[:,i] = amseas.variables['water_temp'][0,:,oklat_amseas[i],oklon_amseas[i]]
@@ -325,8 +331,10 @@ for id in gliders:
         plt.ylabel('Depth (m)',fontsize=20)
         plt.xlabel('Temperature ($^oC$)',fontsize=20)
         plt.title('Temperature Profile ' + id,fontsize=20)
-        plt.ylim([-np.nanmax(depthg)+100,0])
-        plt.ylim([-np.nanmax(depthg)-100,0.1])
+        if np.nanmax(depthg) <= 100:
+            plt.ylim([-np.nanmax(depthg)-30,0.1])
+        else:
+            plt.ylim([-np.nanmax(depthg)-100,0.1])
         plt.legend(loc='lower left',bbox_to_anchor=(-0.2,0.0),fontsize=14)
         plt.grid('on')
 
@@ -400,8 +408,10 @@ for id in gliders:
         plt.ylabel('Depth (m)',fontsize=20)
         plt.xlabel('Salinity',fontsize=20)
         plt.title('Salinity Profile ' + id,fontsize=20)
-        plt.ylim([-np.nanmax(depthg)+100,0])
-        plt.ylim([-np.nanmax(depthg)-100,0.1])
+        if np.nanmax(depthg) <= 100:
+            plt.ylim([-np.nanmax(depthg)-30,0.1])
+        else:
+            plt.ylim([-np.nanmax(depthg)-100,0.1])
         plt.legend(loc='lower left',bbox_to_anchor=(-0.2,0.0),fontsize=14)
         plt.grid('on')
 
