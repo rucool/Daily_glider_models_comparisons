@@ -33,6 +33,8 @@ from bs4 import BeautifulSoup
 import glob
 from zipfile import ZipFile
 import cmocean
+import cartopy
+import cartopy.feature as cfeature
 
 # Do not produce figures on screen
 plt.switch_backend('agg')
@@ -192,13 +194,18 @@ mark = ['o','*','p','^','D','X','o','*','p','^','D','X','o',\
         'o','*','p','^','D','X','o','*','p','^','D','X','o']
 
 lev = np.arange(-9000,9100,100)
-fig, ax = plt.subplots(figsize=(10, 5))
+fig, ax = plt.subplots(figsize=(10, 5),subplot_kw=dict(projection=cartopy.crs.PlateCarree()))
 plt.contourf(bath_lon,bath_lat,bath_elev,lev,cmap=cmocean.cm.topo)
 plt.yticks([])
 plt.xticks([])
 plt.axis([-100,-10,0,50])
 ax.set_aspect(1)
 plt.title('Active Glider Deployments on ' + str(tini)[0:10],fontsize=20)
+
+coast = cfeature.NaturalEarthFeature('physical', 'coastline', '10m')
+ax.add_feature(coast, edgecolor='black', facecolor='none')
+ax.add_feature(cfeature.BORDERS)  # adds country borders  
+ax.add_feature(cfeature.STATES)
 
 #%%
 for i,f in enumerate(zip_files):
