@@ -13,8 +13,8 @@ lat_lim = [15.0,45.0]
 
 # urls
 url_glider = 'https://data.ioos.us/gliders/erddap'
-#url_GOFS = 'http://tds.hycom.org/thredds/dodsC/GLBv0.08/expt_93.0/ts3z'
-url_GOFS = 'https://tds.hycom.org/thredds/dodsC/GLBy0.08/latest'
+url_GOFS = 'http://tds.hycom.org/thredds/dodsC/GLBy0.08/expt_93.0/ts3z'
+#url_GOFS = 'https://tds.hycom.org/thredds/dodsC/GLBy0.08/latest'
 #url_RTOFS = 'https://nomads.ncep.noaa.gov:9090/dods/rtofs/rtofs_global'
 
 # FTP server RTOFS
@@ -205,7 +205,7 @@ for id in gliders:
 
     # checking data frame is not empty
     df = e.to_pandas()
-    if len(df.dropna()) != 0 :
+    if np.logical_and(len(df.dropna()) != 0,df.columns[0] != 'Error {'):
 
         # Converting glider data to data frame
         
@@ -291,34 +291,33 @@ for id in gliders:
         target_lonRTOFS = long
         target_latRTOFS = latg
 
-        # Narrowing time window of GOFS 3.1 to coincide with glider time window
-        tmin = mdates.num2date(mdates.date2num(timeg[0]))
-        tmax = mdates.num2date(mdates.date2num(timeg[-1]))
-        if isinstance(GOFS31,float): 
-            oktimeGOFS = np.nan
-            timeGOFS = np.nan
-        else:
-            oktimeGOFS = np.where(np.logical_and(tGOFS >= tmin,\
-                                         tGOFS <= tmax))
-            timeGOFS = tGOFS[oktimeGOFS]
-
-        # Narrowing time window of RTOFS to coincide with glider time window
-        #tmin = tini
-        #tmax = tend
-        tmin = mdates.num2date(mdates.date2num(timeg[0]))
-        tmax = mdates.num2date(mdates.date2num(timeg[-1]))
-        oktimeRTOFS = np.where(np.logical_and(tRTOFS >= tmin, tRTOFS <= tmax))
-        timeRTOFS = mdates.num2date(mdates.date2num(tRTOFS[oktimeRTOFS]))
-
         # Changing times to timestamp
         tstamp_glider = [mdates.date2num(timeg[i]) for i in np.arange(len(timeg))]
         if isinstance(GOFS31,float):
             tstampGOFS = np.nan
         else:
-            timeGOFS = [datetime(timeGOFS[i].year,timeGOFS[i].month,timeGOFS[i].day,\
-                    timeGOFS[i].hour) for i in np.arange(len(timeGOFS))]
-            tstamp_GOFS = [mdates.date2num(timeGOFS[i]) for i in np.arange(len(timeGOFS))]
-        tstamp_RTOFS = [mdates.date2num(timeRTOFS[i]) for i in np.arange(len(timeRTOFS))]
+            ttGOFS = np.asarray([datetime(tGOFS[i].year,tGOFS[i].month,tGOFS[i].day,\
+                    tGOFS[i].hour) for i in np.arange(len(tGOFS))])
+            tstamp_GOFS = [mdates.date2num(ttGOFS[i]) for i in np.arange(len(ttGOFS))]
+        tstamp_RTOFS = [mdates.date2num(tRTOFS[i]) for i in np.arange(len(tRTOFS))]
+
+        # Narrowing time window of GOFS 3.1 to coincide with glider time window
+        #tmin = mdates.num2date(mdates.date2num(timeg[0]))
+        #tmax = mdates.num2date(mdates.date2num(timeg[-1]))
+        if isinstance(GOFS31,float): 
+            oktimeGOFS = np.nan
+            timeGOFS = np.nan
+        else:
+            #oktimeGOFS = np.where(np.logical_and(tGOFS >= tmin,tGOFS <= tmax))
+            oktimeGOFS = np.unique(np.round(np.interp(tstamp_glider,tstamp_GOFS,np.arange(len(tstamp_GOFS)))).astype(int))
+            timeGOFS = ttGOFS[oktimeGOFS]
+
+        # Narrowing time window of RTOFS to coincide with glider time window
+        #tmin = mdates.num2date(mdates.date2num(timeg[0]))
+        #tmax = mdates.num2date(mdates.date2num(timeg[-1]))
+        #oktimeRTOFS = np.where(np.logical_and(tRTOFS >= tmin, tRTOFS <= tmax))
+        oktimeRTOFS = np.unique(np.round(np.interp(tstamp_glider,tstamp_RTOFS,np.arange(len(tstamp_RTOFS)))).astype(int)) 
+        timeRTOFS = mdates.num2date(mdates.date2num(tRTOFS[oktimeRTOFS]))
 
         # interpolating glider lon and lat to lat and lon on GOFS 3.1 time
         sublonGOFS=np.interp(tstamp_GOFS,tstamp_glider,target_lonGOFS)
@@ -330,24 +329,24 @@ for id in gliders:
 
         # Getting glider transect from GOFS 3.1
         print('Getting glider transect from GOFS 3.1')
-        if len(oktimeGOFS[0]) == 0:
+        if len(oktimeGOFS) == 0:
             target_tempGOFS = np.empty((len(depthRTOFS),1))
             target_tempGOFS[:] = np.nan
             target_saltGOFS = np.empty((len(depthRTOFS),1))
             target_saltGOFS[:] = np.nan
         else:
-            target_tempGOFS = np.empty((len(depthGOFS),len(oktimeGOFS[0])))
+            target_tempGOFS = np.empty((len(depthGOFS),len(oktimeGOFS)))
             target_tempGOFS[:] = np.nan
-            for i in range(len(oktimeGOFS[0])):
-                print(len(oktimeGOFS[0]),' ',i)
-                target_tempGOFS[:,i] = GOFS31.variables['water_temp'][oktimeGOFS[0][i],:,oklatGOFS[i],oklonGOFS[i]]
+            for i in range(len(oktimeGOFS)):
+                print(len(oktimeGOFS),' ',i)
+                target_tempGOFS[:,i] = GOFS31.variables['water_temp'][oktimeGOFS[i],:,oklatGOFS[i],oklonGOFS[i]]
             target_tempGOFS[target_tempGOFS < -100] = np.nan
 
-            target_saltGOFS = np.empty((len(depthGOFS),len(oktimeGOFS[0])))
+            target_saltGOFS = np.empty((len(depthGOFS),len(oktimeGOFS)))
             target_saltGOFS[:] = np.nan
-            for i in range(len(oktimeGOFS[0])):
-                print(len(oktimeGOFS[0]),' ',i)
-                target_saltGOFS[:,i] = GOFS31.variables['salinity'][oktimeGOFS[0][i],:,oklatGOFS[i],oklonGOFS[i]]
+            for i in range(len(oktimeGOFS)):
+                print(len(oktimeGOFS),' ',i)
+                target_saltGOFS[:,i] = GOFS31.variables['salinity'][oktimeGOFS[i],:,oklatGOFS[i],oklonGOFS[i]]
                 target_saltGOFS[target_saltGOFS < -100] = np.nan
 
         # interpolating glider lon and lat to lat and lon on RTOFS time
@@ -360,25 +359,25 @@ for id in gliders:
 
         # Getting glider transect from RTOFS
         print('Getting glider transect from RTOFS')
-        if len(oktimeRTOFS[0]) == 0:
+        if len(oktimeRTOFS) == 0:
             target_tempRTOFS = np.empty((len(depthRTOFS),1))
             target_tempRTOFS[:] = np.nan
             target_saltRTOFS = np.empty((len(depthRTOFS),1))
             target_saltRTOFS[:] = np.nan
         else:
-            target_tempRTOFS = np.empty((len(depthRTOFS),len(oktimeRTOFS[0])))
+            target_tempRTOFS = np.empty((len(depthRTOFS),len(oktimeRTOFS)))
             target_tempRTOFS[:] = np.nan
-            for i in range(len(oktimeRTOFS[0])):
-                print(len(oktimeRTOFS[0]),' ',i)
+            for i in range(len(oktimeRTOFS)):
+                print(len(oktimeRTOFS),' ',i)
                 nc_file = nc_files_RTOFS[i]
                 ncRTOFS = xr.open_dataset(nc_file)
                 target_tempRTOFS[:,i] = ncRTOFS.variables['temperature'][0,:,oklatRTOFS[i],oklonRTOFS[i]]
             target_tempRTOFS[target_tempRTOFS < -100] = np.nan
 
-            target_saltRTOFS = np.empty((len(depthRTOFS),len(oktimeRTOFS[0])))
+            target_saltRTOFS = np.empty((len(depthRTOFS),len(oktimeRTOFS)))
             target_saltRTOFS[:] = np.nan
-            for i in range(len(oktimeRTOFS[0])):
-                print(len(oktimeRTOFS[0]),' ',i)
+            for i in range(len(oktimeRTOFS)):
+                print(len(oktimeRTOFS),' ',i)
                 nc_file = nc_files_RTOFS[i]
                 ncRTOFS = xr.open_dataset(nc_file)
                 target_saltRTOFS[:,i] = ncRTOFS.variables['salinity'][0,:,oklatRTOFS[i],oklonRTOFS[i]]
@@ -430,8 +429,10 @@ for id in gliders:
         tmin = tini
         tmax = tend
 
-        oktimeCOP = np.where(np.logical_and(mdates.date2num(tCOP) >= mdates.date2num(tmin),\
-                                        mdates.date2num(tCOP) <= mdates.date2num(tmax)))
+        #oktimeCOP = np.where(np.logical_and(mdates.date2num(tCOP) >= mdates.date2num(tmin),\
+        #                                mdates.date2num(tCOP) <= mdates.date2num(tmax)))
+        tstampCOP = mdates.date2num(tCOP)
+        oktimeCOP = np.unique(np.round(np.interp(tstamp_glider,tstampCOP,np.arange(len(tstampCOP)))).astype(int))
         timeCOP = tCOP[oktimeCOP]
 
         # Changing times to timestamp
@@ -452,24 +453,24 @@ for id in gliders:
 
         # Getting glider transect from Copernicus model
         print('Getting glider transect from Copernicus model')
-        if len(oktimeCOP[0]) == 0:
+        if len(oktimeCOP) == 0:
             target_tempCOP = np.empty((len(depthCOP),1))
             target_tempCOP[:] = np.nan
             target_saltCOP = np.empty((len(depthCOP),1))
             target_saltCOP[:] = np.nan
         else:
-            target_tempCOP = np.empty((len(depthCOP),len(oktimeCOP[0])))
+            target_tempCOP = np.empty((len(depthCOP),len(oktimeCOP)))
             target_tempCOP[:] = np.nan
-            for i in range(len(oktimeCOP[0])):
-                print(len(oktimeCOP[0]),' ',i)
-                target_tempCOP[:,i] = COP.variables['thetao'][oktimeCOP[0][i],:,oklatCOP[i],oklonCOP[i]]
+            for i in range(len(oktimeCOP)):
+                print(len(oktimeCOP),' ',i)
+                target_tempCOP[:,i] = COP.variables['thetao'][oktimeCOP[i],:,oklatCOP[i],oklonCOP[i]]
             target_tempCOP[target_tempCOP < -100] = np.nan
 
-            target_saltCOP = np.empty((len(depthCOP),len(oktimeCOP[0])))
+            target_saltCOP = np.empty((len(depthCOP),len(oktimeCOP)))
             target_saltCOP[:] = np.nan
-            for i in range(len(oktimeCOP[0])):
-                print(len(oktimeCOP[0]),' ',i)
-                target_saltCOP[:,i] = COP.variables['so'][oktimeCOP[0][i],:,oklatCOP[i],oklonCOP[i]]
+            for i in range(len(oktimeCOP)):
+                print(len(oktimeCOP),' ',i)
+                target_saltCOP[:,i] = COP.variables['so'][oktimeCOP[i],:,oklatCOP[i],oklonCOP[i]]
             target_saltCOP[target_saltCOP < -100] = np.nan
 
         os.system('rm ' + out_dir + '/' + id + '.nc')
@@ -514,15 +515,15 @@ for id in gliders:
              label=id[:-14]+' '+str(timeg[0])[0:4]+' '+'['+str(timeg[0])[5:19]+','+str(timeg[-1])[5:19]+']')
 
         plt.plot(target_tempGOFS,-depthGOFS,'.-',color='lightcoral',label='_nolegend_')
-        if len(oktimeGOFS[0]) != 0:
+        if len(oktimeGOFS) != 0:
             plt.plot(np.nanmean(target_tempGOFS,axis=1),-depthGOFS,'.-r',markersize=12,linewidth=2,\
                 label='GOFS 3.1'+' '+str(timeGOFS[0].year)+' '+'['+str(timeGOFS[0])[5:13]+','+str(timeGOFS[-1])[5:13]+']')
         plt.plot(target_tempRTOFS,-depthRTOFS,'.-',color='mediumseagreen',label='_nolegend_')
-        if len(oktimeRTOFS[0]) != 0:
+        if len(oktimeRTOFS) != 0:
             plt.plot(np.nanmean(target_tempRTOFS,axis=1),-depthRTOFS,'.-g',markersize=12,linewidth=2,\
                 label='RTOFS'+' '+str(timeRTOFS[0].year)+' '+'['+str(timeRTOFS[0])[5:13]+','+str(timeRTOFS[-1])[5:13]+']')
         plt.plot(target_tempCOP,-depthCOP,'.-',color='plum',label='_nolegend_')
-        if len(oktimeCOP[0]) != 0:
+        if len(oktimeCOP) != 0:
             plt.plot(np.nanmean(target_tempCOP,axis=1),-depthCOP,'.-',color='darkorchid',markersize=12,linewidth=2,\
                 label='Copernicus'+' '+str(timeCOP[0].year)+' '+'['+str(timeCOP[0])[5:13]+','+str(timeCOP[-1])[5:13]+']')
         plt.ylabel('Depth (m)',fontsize=20)
@@ -618,15 +619,15 @@ for id in gliders:
         plt.plot(np.nanmean(saltg_gridded,axis=1),-depthg_gridded,'.-b',\
              label=id[:-14]+' '+str(timeg[0])[0:4]+' '+'['+str(timeg[0])[5:19]+','+str(timeg[-1])[5:19]+']')
         plt.plot(target_saltGOFS,-depthGOFS,'.-',color='lightcoral',label='_nolegend_')
-        if len(oktimeGOFS[0]) != 0:
+        if len(oktimeGOFS) != 0:
             plt.plot(np.nanmean(target_saltGOFS,axis=1),-depthGOFS,'.-r',markersize=12,linewidth=2,\
                 label='GOFS 3.1'+' '+str(timeGOFS[0].year)+' '+'['+str(timeGOFS[0])[5:13]+','+str(timeGOFS[-1])[5:13]+']')
         plt.plot(target_saltRTOFS,-depthRTOFS,'.-',color='mediumseagreen',label='_nolegend_')
-        if len(oktimeRTOFS[0]) != 0:
+        if len(oktimeRTOFS) != 0:
             plt.plot(np.nanmean(target_saltRTOFS,axis=1),-depthRTOFS,'.-g',markersize=12,linewidth=2,\
                 label='RTOFS'+' '+str(timeRTOFS[0].year)+' '+'['+str(timeRTOFS[0])[5:13]+','+str(timeRTOFS[-1])[5:13]+']')
         plt.plot(target_saltCOP,-depthCOP,'.-',color='plum',label='_nolegend_')
-        if len(oktimeCOP[0]) != 0:
+        if len(oktimeCOP) != 0:
             plt.plot(np.nanmean(target_saltCOP,axis=1),-depthCOP,'.-',color='darkorchid',markersize=12,linewidth=2,\
                 label='Copernicus'+' '+str(timeCOP[0].year)+' '+'['+str(timeCOP[0])[5:13]+','+str(timeCOP[-1])[5:13]+']')
         plt.ylabel('Depth (m)',fontsize=20)

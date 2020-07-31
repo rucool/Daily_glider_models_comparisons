@@ -19,6 +19,9 @@ url_nhc = 'https://www.nhc.noaa.gov/gis/'
 # Bathymetry file
 bath_file = '/home/aristizabal/bathymetry_files/GEBCO_2014_2D_-100.0_0.0_-10.0_70.0.nc'
 
+# EEZs file
+file_EEZs = '/home/aristizabal/World_EEZ_v11_20191118/eez_boundaries_v11.shp'
+
 #%%
 from erddapy import ERDDAP
 import pandas as pd
@@ -35,6 +38,7 @@ from zipfile import ZipFile
 import cmocean
 import cartopy
 import cartopy.feature as cfeature
+from cartopy.io.shapereader import Reader
 
 # Do not produce figures on screen
 plt.switch_backend('agg')
@@ -206,6 +210,9 @@ coast = cfeature.NaturalEarthFeature('physical', 'coastline', '10m')
 ax.add_feature(coast, edgecolor='black', facecolor='none')
 ax.add_feature(cfeature.BORDERS)  # adds country borders  
 ax.add_feature(cfeature.STATES)
+shape_feature = cfeature.ShapelyFeature(Reader(file_EEZs).geometries(),
+                   cartopy.crs.PlateCarree(),edgecolor='grey',facecolor='none')
+ax.add_feature(shape_feature,zorder=1)
 
 #%%
 for i,f in enumerate(zip_files):
@@ -226,7 +233,7 @@ for i,f in enumerate(zip_files):
             lon_forec_track[i] = float(s.get_text("coordinates").split('coordinates')[1].split(',')[0])
             lat_forec_track[i] = float(s.get_text("coordinates").split('coordinates')[1].split(',')[1])
 
-        plt.plot(lon_forec_track, lat_forec_track,'.-',color='darkorange')
+        plt.plot(lon_forec_track, lat_forec_track,'.-',color='gold')
 
     else:
         if 'CONE' in f:
@@ -298,7 +305,7 @@ for j,id_all in enumerate(gliders_all):
             timeg, ind = np.unique(df.index.values,return_index=True)
             latg = df['latitude (degrees_north)'].values[ind]
             long = df['longitude (degrees_east)'].values[ind]
-            ax.plot(long,latg,'.-',color='darkorange',markersize=1)
+            ax.plot(long,latg,'.-',color='darkorange',markersize=0.4)
             ax.plot(long[-1],latg[-1],color=col[i-1],\
                 marker = mark[i-1],markeredgecolor = 'k',markersize=7,\
                 label=id[0].split('-')[0])

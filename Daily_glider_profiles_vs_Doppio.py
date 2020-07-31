@@ -146,7 +146,8 @@ for id in gliders:
 
     # checking data frame is not empty
     df = e.to_pandas()
-    if len(df.dropna()) != 0 :
+    #if len(df.dropna()) != 0:
+    if np.logical_and(len(df.dropna()) != 0,df.columns[0] != 'Error {'): 
 
         # Converting glider data to data frame
         df = e.to_pandas(
@@ -220,11 +221,18 @@ for id in gliders:
         # Narrowing time window of Doppio to coincide with glider time window
         tmin = mdates.num2date(mdates.date2num(timeg[0]))
         tmax = mdates.num2date(mdates.date2num(timeg[-1]))
-        oktime_doppio = np.where(np.logical_and(tdoppio >= tmin,tdoppio <= tmax))
+
+        # Changing times to timestamp
+        ttdoppio = [datetime(tdoppio[i].year,tdoppio[i].month,tdoppio[i].day,\
+                    tdoppio[i].hour) for i in np.arange(len(tdoppio))]
+        ttstamp_doppio = [mdates.date2num(ttdoppio[i]) for i in np.arange(len(ttdoppio))]
+        tstamp_glider = [mdates.date2num(timeg[i]) for i in np.arange(len(timeg))]
+
+        #oktime_doppio = np.where(np.logical_and(tdoppio >= tmin,tdoppio <= tmax))
+        oktime_doppio = np.unique(np.round(np.interp(tstamp_glider,ttstamp_doppio,np.arange(len(ttstamp_doppio)))).astype(int))
         timedoppio = tdoppio[oktime_doppio]
 
         # Changing times to timestamp
-        tstamp_glider = [mdates.date2num(timeg[i]) for i in np.arange(len(timeg))]
         timedoppio = [datetime(timedoppio[i].year,timedoppio[i].month,timedoppio[i].day,\
                     timedoppio[i].hour) for i in np.arange(len(timedoppio))]
         tstamp_doppio = [mdates.date2num(timedoppio[i]) for i in np.arange(len(timedoppio))]
@@ -234,11 +242,11 @@ for id in gliders:
         sublatdoppio = np.interp(tstamp_doppio,tstamp_glider,latg)
 
         # getting the model grid positions for sublonm and sublatm
-        oklatdoppio = np.empty((len(oktime_doppio[0])))
+        oklatdoppio = np.empty((len(oktime_doppio)))
         oklatdoppio[:] = np.nan
-        oklondoppio= np.empty((len(oktime_doppio[0])))
+        oklondoppio= np.empty((len(oktime_doppio)))
         oklondoppio[:] = np.nan
-        for t,tt in enumerate(oktime_doppio[0]):
+        for t,tt in enumerate(oktime_doppio):
 
             # search in xi_rho direction
             oklatmm = []
@@ -283,18 +291,18 @@ for id in gliders:
 
         # Getting glider transect from doppio
         print('Getting glider transect from Doppio')
-        target_tempdoppio = np.empty((len(srhodoppio),len(oktime_doppio[0])))
+        target_tempdoppio = np.empty((len(srhodoppio),len(oktime_doppio)))
         target_tempdoppio[:] = np.nan
-        target_saltdoppio = np.empty((len(srhodoppio),len(oktime_doppio[0])))
+        target_saltdoppio = np.empty((len(srhodoppio),len(oktime_doppio)))
         target_saltdoppio[:] = np.nan
-        target_zdoppio = np.empty((len(srhodoppio),len(oktime_doppio[0])))
+        target_zdoppio = np.empty((len(srhodoppio),len(oktime_doppio)))
         target_zdoppio[:] = np.nan
-        for i in range(len(oktime_doppio[0])):
-            print(len(oktime_doppio[0]),' ',i)
-            target_tempdoppio[:,i] = doppio.variables['temp'][oktime_doppio[0][i],:,oklatdoppio[i],oklondoppio[i]]
-            target_saltdoppio[:,i] = doppio.variables['salt'][oktime_doppio[0][i],:,oklatdoppio[i],oklondoppio[i]]
+        for i in range(len(oktime_doppio)):
+            print(len(oktime_doppio),' ',i)
+            target_tempdoppio[:,i] = doppio.variables['temp'][oktime_doppio[i],:,oklatdoppio[i],oklondoppio[i]]
+            target_saltdoppio[:,i] = doppio.variables['salt'][oktime_doppio[i],:,oklatdoppio[i],oklondoppio[i]]
             h = np.asarray(doppio.variables['h'][oklatdoppio[i],oklondoppio[i]])
-            zeta = np.asarray(doppio.variables['zeta'][oktime_doppio[0][i],oklatdoppio[i],oklondoppio[i]])
+            zeta = np.asarray(doppio.variables['zeta'][oktime_doppio[i],oklatdoppio[i],oklondoppio[i]])
 
             # Calculate doppio depth as a function of time
             if Vtransf ==1:

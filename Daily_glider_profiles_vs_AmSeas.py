@@ -166,7 +166,7 @@ for id in gliders:
 
     # checking data frame is not empty
     df = e.to_pandas()
-    if len(df.dropna()) != 0 :
+    if np.logical_and(len(df.dropna()) != 0,df.columns[0] != 'Error {'):
 
         # Converting glider data to data frame
         df = e.to_pandas(
