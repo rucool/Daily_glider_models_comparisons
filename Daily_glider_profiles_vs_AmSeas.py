@@ -158,7 +158,6 @@ bath_elev = ncbath.variables['elevation'][:]
 
 #%% Looping through all gliders found
 for id in gliders:
-
     print('Reading ' + id )
     e.dataset_id = id
     e.constraints = constraints
@@ -247,22 +246,21 @@ for id in gliders:
                 target_lon_amseas[i] = ii
         target_lat_amseas = latg
 
-        # Narrowing time window of AMSEAS to coincide with glider time window
-        tmin = mdates.num2date(mdates.date2num(timeg[0]))
-        tmax = mdates.num2date(mdates.date2num(timeg[-1]))
-        oktime_amseas = np.where(np.logical_and(tamseas >= tmin,tamseas <= tmax))[0]
-        time_amseas = tamseas[oktime_amseas]
-
         # Changing times to timestamp
         tstamp_glider = [mdates.date2num(timeg[i]) for i in np.arange(len(timeg))]
-
         if isinstance(amseas,float):
             tstamp_amseas = np.nan
         else:
-            time_amseas = [datetime(time_amseas[i].year,time_amseas[i].month,time_amseas[i].day,\
-                    time_amseas[i].hour) for i in np.arange(len(time_amseas))]
-            tstamp_amseas = [mdates.date2num(time_amseas[i]) for i in np.arange(len(time_amseas))]
+            tt_amseas = np.asarray([datetime(tamseas[i].year,tamseas[i].month,tamseas[i].day,\
+                    tamseas[i].hour) for i in np.arange(len(tamseas))])
+            tstamp_amseas = [mdates.date2num(tt_amseas[i]) for i in np.arange(len(tt_amseas))]
 
+        # Narrowing time window of AMSEAS to coincide with glider time window
+        tmin = mdates.num2date(mdates.date2num(timeg[0]))
+        tmax = mdates.num2date(mdates.date2num(timeg[-1]))
+        #oktime_amseas = np.where(np.logical_and(tamseas >= tmin,tamseas <= tmax))[0]
+        oktime_amseas = np.unique(np.round(np.interp(tstamp_glider,tstamp_amseas,np.arange(len(tstamp_amseas)))).astype(int))
+        time_amseas = tt_amseas[oktime_amseas]
 
         # interpolating glider lon and lat to lat and lon on AMSEAS time
         sublon_amseas=np.interp(tstamp_amseas,tstamp_glider,target_lon_amseas)
