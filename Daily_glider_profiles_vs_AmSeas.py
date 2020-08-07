@@ -29,6 +29,7 @@ import numpy as np
 import xarray as xr
 import netCDF4
 import cmocean
+import os
 
 # Do not produce figures on screen
 plt.switch_backend('agg')
@@ -38,29 +39,22 @@ plt.rc('xtick',labelsize=14)
 plt.rc('ytick',labelsize=14)
 plt.rc('legend',fontsize=14)
 
-#%% Get time bounds for the previous day
-
-te = datetime.today()
-tend = datetime(te.year,te.month,te.day)
-
-ti = datetime.today() - timedelta(1)
-tini = datetime(ti.year,ti.month,ti.day)
-
 #%% Get time bounds for current day
-'''
+ti = datetime.today()
+tini = datetime(ti.year,ti.month,ti.day)
 te = datetime.today() + timedelta(1)
 tend = datetime(te.year,te.month,te.day)
 
-#ti = datetime.today() - timedelta(1)
-ti = datetime.today()
-tini = datetime(ti.year,ti.month,ti.day)
-'''
+folder = '/www/web/rucool/hurricane/Hurricane_season_' + ti.strftime('%Y') + '/' + ti.strftime('%b-%d') + '/'
+os.system('mkdir ' + folder)
+os.system('mkdir ' + folder + '/AmSeas')
 
 #%%
 '''
 tend = datetime.datetime(2019, 7, 20, 0, 0)
 tini = datetime.datetime(2019, 7, 19, 0, 0)
 '''
+
 #%% Look for datasets in IOOS glider dac
 print('Looking for glider data sets')
 e = ERDDAP(server = url_glider)
@@ -129,7 +123,7 @@ else:
     else:
         date = str(tini.year) + str(tini.month) + str(tini.day)
 
-file_amseas = url_amseas + '/' + date + '/' + 'ncom_relo_amseas_u_' + date + '00_t000.nc'
+file_amseas = url_amseas + date + '/' + 'ncom_relo_amseas_u_' + date + '00_t000.nc'
 amseas = xr.open_dataset(file_amseas,decode_times=False)
 
 latamseas = amseas.lat[:]

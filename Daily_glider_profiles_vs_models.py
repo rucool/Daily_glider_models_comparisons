@@ -59,18 +59,14 @@ plt.rc('xtick',labelsize=14)
 plt.rc('ytick',labelsize=14)
 plt.rc('legend',fontsize=14)
 
-#%% Get time bounds for the previous day
-te = datetime.today()
+#%% Get time bounds for the current day
+ti = datetime.today() 
+tini = datetime(ti.year,ti.month,ti.day)
+te = datetime.today() + timedelta(1)
 tend = datetime(te.year,te.month,te.day)
 
-ti = datetime.today() - timedelta(1)
-tini = datetime(ti.year,ti.month,ti.day)
-
-#te = datetime.today() + timedelta(1)
-#tend = datetime(te.year,te.month,te.day)
-
-#ti = datetime.today() 
-#tini = datetime(ti.year,ti.month,ti.day)
+folder = '/www/web/rucool/hurricane/Hurricane_season_' + ti.strftime('%Y') + '/' + ti.strftime('%b-%d') + '/'
+os.system('mkdir ' + folder)
 
 #%% Look for datasets in IOOS glider dac
 print('Looking for glider data sets')

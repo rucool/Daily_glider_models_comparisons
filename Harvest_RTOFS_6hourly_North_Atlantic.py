@@ -14,12 +14,11 @@ import os
 from datetime import datetime, timedelta
 import numpy as np
 
-#%% Get time bounds for the previous day
-te = datetime.today()
-tend = datetime(te.year,te.month,te.day)
-
-ti = datetime.today() - timedelta(1)
+#%% Get time bounds for current day
+ti = datetime.today() 
 tini = datetime(ti.year,ti.month,ti.day)
+te = datetime.today() + timedelta(1)
+tend = datetime(te.year,te.month,te.day)
 
 #%% Get name of folder in FTP server
 if tini.month < 10:
@@ -33,23 +32,7 @@ else:
     else:
         folder = 'rtofs.' + str(tini.year) + str(tini.month) + str(tini.day)
 
-'''
-if tend.month < 10:
-    if tend.day < 10:
-	if tini.day < 10:
-        	folder = 'rtofs.' + str(tini.year) + '0' + str(tini.month) + '0' + str(tini.day)
-        else:
-		folder = 'rtofs.' + str(tini.year) + '0' + str(tini.month) + str(tini.day)
-    else:
-        folder = 'rtofs.' + str(tini.year) + '0' + str(tini.month) + str(tini.day)
-else:
-    if tend.day < 10:
-        folder = 'rtofs.' + str(tini.year) + str(tini.month) + '0' + str(tini.day)
-    else:
-        folder = 'rtofs.' + str(tini.year) + str(tini.month) + str(tini.day)
-'''
 
-#os.system('mkdir '+'/home/aristizabal/RTOFS_6hourly_North_Atlantic/'+folder)
 os.system('mkdir '+'/home/coolgroup/RTOFS/forecasts/domains/hurricanes/RTOFS_6hourly_North_Atlantic/'+folder)
 
 #%% load RTOFS nc files
