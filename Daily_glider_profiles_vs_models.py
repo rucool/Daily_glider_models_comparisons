@@ -336,14 +336,12 @@ for id in gliders:
             for i in range(len(oktimeGOFS)):
                 print(len(oktimeGOFS),' ',i)
                 target_tempGOFS[:,i] = GOFS31.variables['water_temp'][oktimeGOFS[i],:,oklatGOFS[i],oklonGOFS[i]]
-            target_tempGOFS[target_tempGOFS < -100] = np.nan
 
             target_saltGOFS = np.empty((len(depthGOFS),len(oktimeGOFS)))
             target_saltGOFS[:] = np.nan
             for i in range(len(oktimeGOFS)):
                 print(len(oktimeGOFS),' ',i)
                 target_saltGOFS[:,i] = GOFS31.variables['salinity'][oktimeGOFS[i],:,oklatGOFS[i],oklonGOFS[i]]
-                target_saltGOFS[target_saltGOFS < -100] = np.nan
 
         # interpolating glider lon and lat to lat and lon on RTOFS time
         sublonRTOFS = np.interp(tstamp_RTOFS,tstamp_glider,target_lonRTOFS)
@@ -368,7 +366,6 @@ for id in gliders:
                 nc_file = nc_files_RTOFS[i]
                 ncRTOFS = xr.open_dataset(nc_file)
                 target_tempRTOFS[:,i] = ncRTOFS.variables['temperature'][0,:,oklatRTOFS[i],oklonRTOFS[i]]
-            target_tempRTOFS[target_tempRTOFS < -100] = np.nan
 
             target_saltRTOFS = np.empty((len(depthRTOFS),len(oktimeRTOFS)))
             target_saltRTOFS[:] = np.nan
@@ -377,7 +374,6 @@ for id in gliders:
                 nc_file = nc_files_RTOFS[i]
                 ncRTOFS = xr.open_dataset(nc_file)
                 target_saltRTOFS[:,i] = ncRTOFS.variables['salinity'][0,:,oklatRTOFS[i],oklonRTOFS[i]]
-            target_saltRTOFS[target_saltRTOFS < -100] = np.nan
 
         #os.system('rm ' + out_dir + '/' + '*.nc')
 
@@ -460,14 +456,12 @@ for id in gliders:
             for i in range(len(oktimeCOP)):
                 print(len(oktimeCOP),' ',i)
                 target_tempCOP[:,i] = COP.variables['thetao'][oktimeCOP[i],:,oklatCOP[i],oklonCOP[i]]
-            target_tempCOP[target_tempCOP < -100] = np.nan
 
             target_saltCOP = np.empty((len(depthCOP),len(oktimeCOP)))
             target_saltCOP[:] = np.nan
             for i in range(len(oktimeCOP)):
                 print(len(oktimeCOP),' ',i)
                 target_saltCOP[:,i] = COP.variables['so'][oktimeCOP[i],:,oklatCOP[i],oklonCOP[i]]
-            target_saltCOP[target_saltCOP < -100] = np.nan
 
         os.system('rm ' + out_dir + '/' + id + '.nc')
 

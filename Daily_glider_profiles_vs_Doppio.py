@@ -8,7 +8,7 @@ Created on Mon Aug 12 10:52:48 2019
 
 #%% User input
 # lat and lon bounds
-lon_lim = [-80.52,-59.69]
+lon_lim = [-77.5,-59.69]
 lat_lim = [32.24,46.61]
 
 # urls
@@ -290,6 +290,9 @@ for id in gliders:
 
         oklatdoppio = oklatdoppio.astype(int)
         oklondoppio = oklondoppio.astype(int)
+
+        if np.logical_or(oklondoppio.max()==0,oklatdoppio.max()==0):
+            continue 
 
         # Getting glider transect from doppio
         print('Getting glider transect from Doppio')
