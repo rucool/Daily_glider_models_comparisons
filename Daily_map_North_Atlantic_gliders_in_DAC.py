@@ -50,9 +50,10 @@ plt.rc('ytick',labelsize=14)
 plt.rc('legend',fontsize=14)
 
 #%% Get time bounds for the current day
-ti = datetime.today()
+#ti = datetime.today()
+ti = datetime.today() - timedelta(hours=6)
 tini = datetime(ti.year,ti.month,ti.day)
-te = datetime.today() + timedelta(1)
+te = ti + timedelta(1)
 tend = datetime(te.year,te.month,te.day)
 
 folder = '/www/web/rucool/hurricane/Hurricane_season_' + ti.strftime('%Y') + '/' + ti.strftime('%b-%d') + '/'
