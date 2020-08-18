@@ -294,6 +294,8 @@ for id in gliders:
 
         if np.logical_or(oklondoppio.max()==0,oklatdoppio.max()==0):
             continue 
+        if np.logical_or(oklondoppio.min()<=1,oklatdoppio.min()<=1):
+            continue 
 
         # Getting glider transect from doppio
         print('Getting glider transect from Doppio')
