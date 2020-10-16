@@ -196,9 +196,12 @@ zip_files = [f for f in zip_files if np.logical_or('al' in f,'AL' in f)]
 col = ['red','darkcyan','gold','m','darkorange','crimson','lime',\
        'darkorchid','brown','sienna','yellow','orchid','gray',\
        'darkcyan','gold','m','darkorange','crimson','lime','red',\
-       'darkorchid','brown','sienna','yellow','orchid','gray']
-mark = ['o','*','p','^','D','X','o','*','p','^','D','X','o',\
-        'o','*','p','^','D','X','o','*','p','^','D','X','o']
+       'darkorchid','brown','sienna','yellow','orchid','gray',\
+       'rosybrown','peru','olive','springgreen','deepskyblue',\
+       'midnightblue','slateblue','indigo','tan','coral']
+mark = ['o','*','p','^','D','X','o','*','p','^','D','*',\
+        'o','*','p','^','D','X','o','*','p','^','D','o',\
+        'o','*','p','^','D','X','o','*','p','^','D','X']
 
 lev = np.arange(-9000,9100,100)
 fig, ax = plt.subplots(figsize=(10, 5),subplot_kw=dict(projection=cartopy.crs.PlateCarree()))

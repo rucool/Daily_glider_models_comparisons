@@ -386,8 +386,8 @@ for id in gliders:
         ' --longitude-max ' + str(np.max(long)+2/12) + \
         ' --latitude-min ' + str(np.min(latg)-2/12) + \
         ' --latitude-max ' + str(np.max(latg)+2/12) + \
-        ' --date-min ' + str(tini-timedelta(0.5)) + \
-        ' --date-max ' + str(tend+timedelta(0.5)) + \
+        ' --date-min ' + '"' + str(tini-timedelta(0.5)) + '"' + \
+        ' --date-max ' + '"' + str(tend+timedelta(0.5)) + '"' + \
         ' --depth-min ' + depth_min + \
         ' --depth-max ' + str(np.nanmax(depthg)) + \
         ' --variable ' + 'thetao' + ' ' + \

@@ -45,6 +45,12 @@ ti = datetime.today() - timedelta(hours=6)
 tini = datetime(ti.year,ti.month,ti.day)
 te = ti + timedelta(1)
 tend = datetime(te.year,te.month,te.day)
+'''
+ti = datetime(2020,9,3)
+tini = datetime(2020,9,3)
+te = datetime(2020,9,3)
+tend = datetime(2020,9,3)
+'''
 
 folder = '/www/web/rucool/hurricane/Hurricane_season_' + ti.strftime('%Y') + '/' + ti.strftime('%b-%d') + '/'
 os.system('mkdir ' + folder)
