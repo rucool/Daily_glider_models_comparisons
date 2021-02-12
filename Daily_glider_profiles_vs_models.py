@@ -299,8 +299,6 @@ for id in gliders:
         tstamp_RTOFS = [mdates.date2num(tRTOFS[i]) for i in np.arange(len(tRTOFS))]
 
         # Narrowing time window of GOFS 3.1 to coincide with glider time window
-        #tmin = mdates.num2date(mdates.date2num(timeg[0]))
-        #tmax = mdates.num2date(mdates.date2num(timeg[-1]))
         if isinstance(GOFS31,float): 
             oktimeGOFS = np.nan
             timeGOFS = np.nan
@@ -310,9 +308,6 @@ for id in gliders:
             timeGOFS = ttGOFS[oktimeGOFS]
 
         # Narrowing time window of RTOFS to coincide with glider time window
-        #tmin = mdates.num2date(mdates.date2num(timeg[0]))
-        #tmax = mdates.num2date(mdates.date2num(timeg[-1]))
-        #oktimeRTOFS = np.where(np.logical_and(tRTOFS >= tmin, tRTOFS <= tmax))
         oktimeRTOFS = np.unique(np.round(np.interp(tstamp_glider,tstamp_RTOFS,np.arange(len(tstamp_RTOFS)))).astype(int)) 
         timeRTOFS = mdates.num2date(mdates.date2num(tRTOFS[oktimeRTOFS]))
 

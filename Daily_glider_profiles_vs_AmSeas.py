@@ -13,7 +13,8 @@ lat_lim = [5.0,32.0]
 
 # urls
 url_glider = 'https://data.ioos.us/gliders/erddap'
-url_amseas = 'https://www.ncei.noaa.gov/thredds-coastal/dodsC/amseas/amseas_20130405_to_current/'
+#url_amseas = 'https://www.ncei.noaa.gov/thredds-coastal/dodsC/amseas/amseas_20130405_to_current/'
+url_amseas = 'https://www.ncei.noaa.gov/thredds-coastal/dodsC/ncom_amseas_agg/AmSeas_Dec_17_2020_to_Current_best.ncd'
 
 # Bathymetry file
 bath_file = '/home/aristizabal/bathymetry_files/GEBCO_2014_2D_-100.0_0.0_-10.0_70.0.nc'
@@ -45,22 +46,10 @@ ti = datetime.today() - timedelta(hours=6)
 tini = datetime(ti.year,ti.month,ti.day)
 te = ti + timedelta(1)
 tend = datetime(te.year,te.month,te.day)
-'''
-ti = datetime(2020,9,3)
-tini = datetime(2020,9,3)
-te = datetime(2020,9,3)
-tend = datetime(2020,9,3)
-'''
 
 folder = '/www/web/rucool/hurricane/Hurricane_season_' + ti.strftime('%Y') + '/' + ti.strftime('%b-%d') + '/'
 os.system('mkdir ' + folder)
 os.system('mkdir ' + folder + '/AmSeas')
-
-#%%
-'''
-tend = datetime.datetime(2019, 7, 20, 0, 0)
-tini = datetime.datetime(2019, 7, 19, 0, 0)
-'''
 
 #%% Look for datasets in IOOS glider dac
 print('Looking for glider data sets')
@@ -118,38 +107,14 @@ e = ERDDAP(
 
 #%% Read AMSEAS output
 print('Retrieving coordinates from AMSEAS')
+amseas = xr.open_dataset(url_amseas,decode_times=False)
 
-if tini.month < 10:
-    if tini.day < 10:
-        date = str(tini.year) + '0' + str(tini.month) + '0' + str(tini.day)
-    else:
-        date = str(tini.year) + '0' + str(tini.month) + str(tini.day)
-else:
-    if tini.day < 10:
-        date = str(tini.year) + str(tini.month) + '0' + str(tini.day)
-    else:
-        date = str(tini.year) + str(tini.month) + str(tini.day)
+latamseas = np.asarray(amseas.lat[:])
+lonamseas = np.asarray(amseas.lon[:])
+depthamseas = np.asarray(amseas.depth[:])
 
-file_amseas = url_amseas + date + '/' + 'ncom_relo_amseas_u_' + date + '00_t000.nc'
-amseas = xr.open_dataset(file_amseas,decode_times=False)
-
-latamseas = amseas.lat[:]
-lonamseas = amseas.lon[:]
-depthamseas = amseas.depth[:]
-
-#%%
-print('Retrieving time from AMSEAS')
-tamseas = []
-for t in np.arange(0,25,3):
-    if t<10:
-        file_amseas = url_amseas + '/' + date + '/' + 'ncom_relo_amseas_u_' + date + '00_t00' + str(t) + '.nc'
-    else:
-        file_amseas = url_amseas + '/' + date + '/' + 'ncom_relo_amseas_u_' + date + '00_t0' + str(t) + '.nc'
-    amseas = xr.open_dataset(file_amseas,decode_times=False)
-    ttamseas = amseas.time
-    tamseas.append(netCDF4.num2date(ttamseas[:],ttamseas.units)[0])
-
-tamseas = np.asarray(tamseas)
+tt_amseas = amseas.time
+tamseas = netCDF4.num2date(tt_amseas[:],tt_amseas.units)
 
 #%% Reading bathymetry data
 ncbath = xr.open_dataset(bath_file)
@@ -247,25 +212,26 @@ for id in gliders:
                 target_lon_amseas[i] = ii
         target_lat_amseas = latg
 
-        # Changing times to timestamp
-        tstamp_glider = [mdates.date2num(timeg[i]) for i in np.arange(len(timeg))]
+        # Narrowing time window of AMSEAS to coincide with glider time window
+        tmin = mdates.num2date(mdates.date2num(timeg[0]))
+        tmax = mdates.num2date(mdates.date2num(timeg[-1]))
+
         if isinstance(amseas,float):
             tstamp_amseas = np.nan
         else:
             tt_amseas = np.asarray([datetime(tamseas[i].year,tamseas[i].month,tamseas[i].day,\
                     tamseas[i].hour) for i in np.arange(len(tamseas))])
-            tstamp_amseas = [mdates.date2num(tt_amseas[i]) for i in np.arange(len(tt_amseas))]
+            tstamp_amseas = np.asarray([mdates.date2num(tt_amseas[i]) for i in np.arange(len(tt_amseas))])
+        
 
-        # Narrowing time window of AMSEAS to coincide with glider time window
-        tmin = mdates.num2date(mdates.date2num(timeg[0]))
-        tmax = mdates.num2date(mdates.date2num(timeg[-1]))
-        #oktime_amseas = np.where(np.logical_and(tamseas >= tmin,tamseas <= tmax))[0]
+        # Changing times to timestamp
+        tstamp_glider = [mdates.date2num(timeg[i]) for i in np.arange(len(timeg))]
         oktime_amseas = np.unique(np.round(np.interp(tstamp_glider,tstamp_amseas,np.arange(len(tstamp_amseas)))).astype(int))
         time_amseas = tt_amseas[oktime_amseas]
 
         # interpolating glider lon and lat to lat and lon on AMSEAS time
-        sublon_amseas=np.interp(tstamp_amseas,tstamp_glider,target_lon_amseas)
-        sublat_amseas=np.interp(tstamp_amseas,tstamp_glider,target_lat_amseas)
+        sublon_amseas=np.interp(tstamp_amseas[oktime_amseas],tstamp_glider,target_lon_amseas)
+        sublat_amseas=np.interp(tstamp_amseas[oktime_amseas],tstamp_glider,target_lat_amseas)
 
         # getting the model grid positions for sublonm and sublatm
         oklon_amseas=np.round(np.interp(sublon_amseas,lonamseas,np.arange(len(lonamseas)))).astype(int)
@@ -283,16 +249,14 @@ for id in gliders:
             target_temp_amseas[:] = np.nan
             target_salt_amseas = np.empty((len(depthamseas),len(oktime_amseas)))
             target_salt_amseas[:] = np.nan
-            for i,t in enumerate(np.arange(0,25,3)[oktime_amseas]):
-                #print(i,t)
-                if t<10:
-                    file_amseas = url_amseas + '/' + date + '/' + 'ncom_relo_amseas_u_' + date + '00_t00' + str(t) + '.nc'
-                else:
-                    file_amseas = url_amseas + '/' + date + '/' + 'ncom_relo_amseas_u_' + date + '00_t0' + str(t) + '.nc'
-                    amseas = xr.open_dataset(file_amseas,decode_times=False)
-                print(len(oktime_amseas),' hour=',t)
-                target_temp_amseas[:,i] = amseas.variables['water_temp'][0,:,oklat_amseas[i],oklon_amseas[i]]
-                target_salt_amseas[:,i] = amseas.variables['salinity'][0,:,oklat_amseas[i],oklon_amseas[i]]
+           
+            target_temp_amseas = np.empty((len(depthamseas),len(oktime_amseas)))
+            target_temp_amseas[:] = np.nan
+            target_salt_amseas = np.empty((len(depthamseas),len(oktime_amseas)))
+            target_salt_amseas[:] = np.nan 
+            for i,t in enumerate(oktime_amseas):
+                target_temp_amseas[:,i] = amseas.variables['water_temp'][oktime_amseas[i],:,oklat_amseas[i],oklon_amseas[i]]
+                target_salt_amseas[:,i] = amseas.variables['salinity'][oktime_amseas[i],:,oklat_amseas[i],oklon_amseas[i]]
 
         # Convertion from GOFS to glider convention
         lonamseasg = np.empty((len(lonamseas),))

@@ -91,8 +91,11 @@ print(msg(len(gliders), '\n'.join(gliders)))
 #% get entire deployment (lat and lon) during hurricane season
 
 # Time bounds
-min_time2 = str(tini.year) + '-05-15T00:00:00Z'
-max_time2 = str(tini.year) + '-11-30T00:00:00Z'
+#min_time2 = str(tini.year) + '-05-15T00:00:00Z'
+#max_time2 = str(tini.year) + '-11-30T00:00:00Z'
+
+min_time2 = str(tini.year) + '-01-01T00:00:00Z'
+max_time2 = str(tini.year) + '-12-31T00:00:00Z'
 
 # Search constraints
 kw = {
