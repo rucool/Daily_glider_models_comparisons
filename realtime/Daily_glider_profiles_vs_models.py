@@ -186,9 +186,16 @@ for id in gliders:
             parse_dates=True,
             skiprows=(1,)  # units information can be dropped.
         ).dropna()
-        df = df[(np.abs(stats.zscore(df['salinity (1)'])) < 3)]  # filter salinity
-        df = df[(np.abs(stats.zscore(df['temperature (Celsius)'])) < 3)]  # filter temperature
 
+        try:
+            df = df[(np.abs(stats.zscore(df['salinity (1)'])) < 3)]  # filter salinity
+        except KeyError:
+            pass
+
+        try:
+            df = df[(np.abs(stats.zscore(df['temperature (Celsius)'])) < 3)]  # filter temperature
+        except KeyError:
+            pass
 
         # Coverting glider vectors into arrays
         timeg, ind = np.unique(df.index.values, return_index=True)
@@ -196,8 +203,8 @@ for id in gliders:
         long = df['longitude (degrees_east)'].values[ind]
 
         dg = df['depth (m)'].values
-        tg = df['temperature (Celsius)'].values
-        sg = df['salinity (1)'].values
+        tg = df[df.columns[3]].values
+        sg = df[df.columns[4]].values
 
         delta_z = 0.3
         zn = int(np.round(np.nanmax(dg) / delta_z))
