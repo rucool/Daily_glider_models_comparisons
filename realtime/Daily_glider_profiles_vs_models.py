@@ -7,7 +7,6 @@ Created on Tue Jul 8 2019
 """
 import os.path
 from datetime import datetime, timedelta
-from ftplib import FTP
 import cmocean
 import matplotlib.dates as mdates
 import matplotlib.patches as patches
@@ -19,6 +18,8 @@ import xarray as xr
 from erddapy import ERDDAP
 from glob import glob
 import datetime as dt
+import scipy.stats as stats
+
 # Do not produce figures on screen
 plt.switch_backend('agg')
 
@@ -35,17 +36,21 @@ save_dir = '/www/web/rucool/'
 bath_file = '/home/hurricaneadm/data/bathymetry/GEBCO_2014_2D_-100.0_0.0_-10.0_70.0.nc'
 out_dir = '/home/hurricaneadm/tmp'
 ncCOP_global = '/home/hurricaneadm/data/copernicus/global-analysis-forecast-phy-001-024_1565877333169.nc'
+rtofs_dir = '/home/hurricaneadm/data/rtofs/'
 
 # Test inputs
 # save_dir = '/Users/mikesmith/Documents/'
 # bath_file = '/Users/mikesmith/Documents/github/rucool/hurricanes/data/bathymetry/GEBCO_2014_2D_-100.0_0.0_-10.0_70.0.nc'
 # out_dir = '/Users/mikesmith/Documents/hurricane/tmp/'
 # ncCOP_global = '/Users/mikesmith/Documents/hurricane/data/global-analysis-forecast-phy-001-024_1565877333169.nc'
+# rtofs_dir = '/Users/mikesmith/Documents/github/rucool/hurricanes/data/rtofs/'
 
-rtofs_dir = '/Users/mikesmith/Documents/github/rucool/hurricanes/data/rtofs/'
+days = 1
 
-# Get today and yesterday dates
-date_list = [dt.date.today()]
+today = dt.date.today()
+
+date_list = [today + dt.timedelta(days=x+1) for x in range(days)]
+date_list.insert(0, today)
 rtofs_files = [glob(os.path.join(rtofs_dir, x.strftime('rtofs.%Y%m%d'), '*.nc')) for x in date_list]
 rtofs_files = sorted([inner for outer in rtofs_files for inner in outer])
 
@@ -62,12 +67,10 @@ plt.rc('ytick', labelsize=14)
 plt.rc('legend', fontsize=14)
 
 # Get time bounds for the current day
-ti = datetime.today() - timedelta(hours=6)
-tini = datetime(ti.year, ti.month, ti.day)
-te = ti + timedelta(1)
-tend = datetime(te.year, te.month, te.day)
+t0 = date_list[0]
+t1 = date_list[1]
 
-folder = os.path.join(f"{save_dir}/hurricane/Hurricane_season_{ti.strftime('%Y')}", ti.strftime('%m-%d'))
+folder = os.path.join(f"{save_dir}/hurricane/Hurricane_season_{t0.strftime('%Y')}", t0.strftime('%m-%d'))
 os.makedirs(folder, exist_ok=True)
 
 # %% Look for datasets in IOOS glider dac
@@ -83,8 +86,8 @@ kw = {
     'max_lon': lon_lim[1],
     'min_lat': lat_lim[0],
     'max_lat': lat_lim[1],
-    'min_time': tini.strftime('%Y-%m-%dT%H:%M:%SZ'),
-    'max_time': tend.strftime('%Y-%m-%dT%H:%M:%SZ'),
+    'min_time': t0.strftime('%Y-%m-%dT%H:%M:%SZ'),
+    'max_time': t1.strftime('%Y-%m-%dT%H:%M:%SZ'),
 }
 
 search_url = e.get_search_url(response='csv', **kw)
@@ -100,8 +103,8 @@ print(msg(len(gliders), '\n'.join(gliders)))
 
 # Setting constraints
 constraints = {
-    'time>=': str(tini),
-    'time<=': str(tend),
+    'time>=': str(t0),
+    'time<=': str(t1),
     'latitude>=': lat_lim[0],
     'latitude<=': lat_lim[1],
     'longitude>=': lon_lim[0],
@@ -183,6 +186,9 @@ for id in gliders:
             parse_dates=True,
             skiprows=(1,)  # units information can be dropped.
         ).dropna()
+        df = df[(np.abs(stats.zscore(df['salinity (1)'])) < 3)]  # filter salinity
+        df = df[(np.abs(stats.zscore(df['temperature (Celsius)'])) < 3)]  # filter temperature
+
 
         # Coverting glider vectors into arrays
         timeg, ind = np.unique(df.index.values, return_index=True)
@@ -190,8 +196,8 @@ for id in gliders:
         long = df['longitude (degrees_east)'].values[ind]
 
         dg = df['depth (m)'].values
-        tg = df[df.columns[3]].values
-        sg = df[df.columns[4]].values
+        tg = df['temperature (Celsius)'].values
+        sg = df['salinity (1)'].values
 
         delta_z = 0.3
         zn = int(np.round(np.nanmax(dg) / delta_z))
@@ -351,8 +357,8 @@ for id in gliders:
                 ' --longitude-max ' + str(np.max(long) + 2 / 12) + \
                 ' --latitude-min ' + str(np.min(latg) - 2 / 12) + \
                 ' --latitude-max ' + str(np.max(latg) + 2 / 12) + \
-                ' --date-min ' + '"' + str(tini - timedelta(0.5)) + '"' + \
-                ' --date-max ' + '"' + str(tend + timedelta(0.5)) + '"' + \
+                ' --date-min ' + '"' + str(t0 - timedelta(0.5)) + '"' + \
+                ' --date-max ' + '"' + str(t1 + timedelta(0.5)) + '"' + \
                 ' --depth-min ' + depth_min + \
                 ' --depth-max ' + str(np.nanmax(depthg)) + \
                 ' --variable ' + 'thetao' + ' ' + \
@@ -385,8 +391,8 @@ for id in gliders:
             tCOP = np.empty(depthCOP_glob.shape[0])
             tCOP[:] = np.nan
 
-        tmin = tini
-        tmax = tend
+        tmin = t0
+        tmax = t1
 
         tstampCOP = mdates.date2num(tCOP)
         oktimeCOP = np.unique(np.round(np.interp(tstamp_glider, tstampCOP, np.arange(len(tstampCOP)))).astype(int))
@@ -469,8 +475,8 @@ for id in gliders:
              np.nanmax(target_saltCOP)]))
 
         # Temperature profile
-        fig, ax = plt.subplots(figsize=(14, 12))
-        grid = plt.GridSpec(5, 2, wspace=0.4, hspace=0.3)
+        fig, ax = plt.subplots(figsize=(20, 12))
+        grid = plt.GridSpec(5, 3, wspace=0.2, hspace=0.2)
 
         ax = plt.subplot(grid[:, 0])
         plt.plot(tempg, -depthg, '.', color='cyan', label='_nolegend_')
@@ -494,26 +500,33 @@ for id in gliders:
                      linewidth=2,
                      label='Copernicus' + ' ' + str(timeCOP[0].year) + ' ' + '[' + str(timeCOP[0])[5:13] + ',' + str(
                          timeCOP[-1])[5:13] + ']')
-        plt.ylabel('Depth (m)', fontsize=20)
-        plt.xlabel('Temperature ($^oC$)', fontsize=20)
-        plt.title('Temperature Profile ' + id, fontsize=20)
+        plt.ylabel('Depth (m)', fontsize=13)
+        plt.xlabel('Temperature ($^oC$)', fontsize=13)
+        deep = False
         if np.nanmax(depthg) <= 100:
             plt.ylim([-np.nanmax(depthg) - 30, 0.1])
         else:
             plt.ylim([-np.nanmax(depthg) - 100, 0.1])
-        plt.legend(loc='lower left', bbox_to_anchor=(-0.2, 0.0), fontsize=14)
+            if np.nanmax(depthg) > 400:
+                deep = True
+        # plt.legend(loc='lower left', bbox_to_anchor=(-0.2, 0.0), fontsize=8)
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0 + box.height * 0.1,
+                         box.width, box.height * 0.9])
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.06), ncol=1, fontsize=11)
         plt.grid('on')
 
+        # Middle third of plot containing glider tracks and grid positions
         # lat and lon bounds of box to draw
         if len(oklatRTOFS) != 0:
             minlonRTOFS = np.min(
-                meshlonRTOFSg[0][oklatRTOFS.min() - 2:oklatRTOFS.max() + 2, oklonRTOFS.min() - 2:oklonRTOFS.max() + 2])
+                meshlonRTOFSg[0][oklatRTOFS.min() - 1:oklatRTOFS.max() + 1, oklonRTOFS.min() - 1:oklonRTOFS.max() + 1])
             maxlonRTOFS = np.max(
-                meshlonRTOFSg[0][oklatRTOFS.min() - 2:oklatRTOFS.max() + 2, oklonRTOFS.min() - 2:oklonRTOFS.max() + 2])
+                meshlonRTOFSg[0][oklatRTOFS.min() - 1:oklatRTOFS.max() + 1, oklonRTOFS.min() - 1:oklonRTOFS.max() + 1])
             minlatRTOFS = np.min(
-                meshlatRTOFSg[0][oklonRTOFS.min() - 2:oklonRTOFS.max() + 2, oklatRTOFS.min() - 2:oklatRTOFS.max() + 2])
+                meshlatRTOFSg[0][oklonRTOFS.min() - 1:oklonRTOFS.max() + 1, oklatRTOFS.min() - 1:oklatRTOFS.max() + 1])
             maxlatRTOFS = np.max(
-                meshlatRTOFSg[0][oklonRTOFS.min() - 2:oklonRTOFS.max() + 2, oklatRTOFS.min() - 2:oklatRTOFS.max() + 2])
+                meshlatRTOFSg[0][oklonRTOFS.min() - 1:oklonRTOFS.max() + 1, oklatRTOFS.min() - 1:oklatRTOFS.max() + 1])
 
         # Getting subdomain for plotting glider track on bathymetry
         oklatbath = np.logical_and(bath_lat >= np.min(latg) - 5, bath_lat <= np.max(latg) + 5)
@@ -527,7 +540,7 @@ for id in gliders:
         ax = plt.subplot(grid[0:2, 1])
         lev = np.arange(-9000, 9100, 100)
         plt.contourf(bath_lonsub, bath_latsub, bath_elevsub, lev, cmap=cmocean.cm.topo)
-        plt.plot(long, latg, '.-', color='orange', label='Glider track',
+        plt.plot(long, latg, '.-', color='orange', label=f'Glider track: {id}',
                  markersize=3)
 
         if len(oklatRTOFS) != 0:
@@ -535,12 +548,12 @@ for id in gliders:
                                      maxlonRTOFS - minlonRTOFS, maxlatRTOFS - minlatRTOFS,
                                      linewidth=1, edgecolor='k', facecolor='none')
             ax.add_patch(rect)
-        plt.title('Glider track and model grid positions', fontsize=20)
-        plt.axis('scaled')
-        plt.legend(loc='upper center', bbox_to_anchor=(1.1, 1))
+        plt.title(f'Glider - {id} track', fontsize=14)
+        # plt.axis('scaled')
+        # plt.legend(loc='upper center', bbox_to_anchor=(1.1, 1))
 
-        ax = plt.subplot(grid[2, 1])
-        ax.plot(long, latg, '.-', color='orange', label='Glider track')
+        ax = plt.subplot(grid[3:4, 1])
+        ax.plot(long, latg, '.-', color='orange', label=f'Glider track: {id}')
         ax.plot(long[0], latg[0], 'sc', label='Initial profile time ' + str(timeg[0])[0:16])
         ax.plot(long[-1], latg[-1], 'sb', label='final profile time ' + str(timeg[-1])[0:16])
         if len(oklatGOFS) != 0:
@@ -550,9 +563,7 @@ for id in gliders:
 
             ax.plot(lonGOFSg[oklonGOFS], latGOFSg[oklatGOFS], 'or',
                     markersize=8, markeredgecolor='k',
-                    label='GOFS 3.1 grid points \n nx = ' + str(oklonGOFS) + '\n ny = ' + str(oklatGOFS)
-                          + '\n [day][hour] = ' + str(np.unique([str(i)[8:10] for i in timeGOFS]))
-                          + str([str(i)[11:13] for i in timeGOFS]))
+                    label='GOFS 3.1 grid points')
         if len(oklatRTOFS) != 0:
             ax.plot(
                 meshlonRTOFSg[0][oklatRTOFS.min() - 2:oklatRTOFS.max() + 2, oklonRTOFS.min() - 2:oklonRTOFS.max() + 2],
@@ -561,29 +572,19 @@ for id in gliders:
                 '.', color='green')
             ax.plot(lonRTOFSg[oklonRTOFS], latRTOFSg[oklatRTOFS], 'og',
                     markersize=8, markeredgecolor='k',
-                    label='RTOFS grid points \n nx = ' + str(oklonRTOFS) + '\n ny = ' + str(oklatRTOFS)
-                          + '\n [day][hour] = ' + str(np.unique([str(i)[8:10] for i in timeRTOFS]))
-                          + str([str(i)[11:13] for i in timeRTOFS]))
+                    label='RTOFS grid points')
         if len(oklatCOP) != 0:
             ax.plot(meshlonCOP[0][oklatCOP.min() - 2:oklatCOP.max() + 2, oklonCOP.min() - 2:oklonCOP.max() + 2],
                     meshlatCOP[0][oklonCOP.min() - 2:oklonCOP.max() + 2, oklatCOP.min() - 2:oklatCOP.max() + 2].T,
                     '.', color='darkorchid')
             ax.plot(lonCOP[oklonCOP], latCOP[oklatCOP], 'o', color='darkorchid',
                     markersize=8, markeredgecolor='k',
-                    label='Copernicus grid points \n nx = ' + str(oklonCOP_glob)
-                          + '\n ny = ' + str(oklatCOP_glob)
-                          + '\n [day][hour] = ' + str([str(i)[8:10] for i in timeCOP])
-                          + str([str(i)[11:13] for i in timeCOP]))
-        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.3))
-
-        file = os.path.join(folder, f'{id}_temp_profile_{tini.strftime("%Y%m%d")}_to_{tend.strftime("%Y%m%d")}')
-        plt.savefig(file, bbox_inches='tight', pad_inches=0.1)
+                    label='Copernicus grid points')
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.3), fontsize=11)
+        plt.title('Model grid positions', fontsize=14)
 
         # Salinity profile
-        fig, ax = plt.subplots(figsize=(14, 12))
-        grid = plt.GridSpec(5, 2, wspace=0.4, hspace=0.3)
-
-        ax = plt.subplot(grid[:, 0])
+        ax = plt.subplot(grid[:, 2])
         plt.plot(saltg, -depthg, '.', color='cyan')
         plt.plot(np.nanmean(saltg_gridded, axis=1), -depthg_gridded, '.-b',
                  label=id[:-14] + ' ' + str(timeg[0])[0:4] + ' ' + '[' + str(timeg[0])[5:19] + ',' + str(timeg[-1])[
@@ -606,87 +607,171 @@ for id in gliders:
                      linewidth=2,
                      label='Copernicus' + ' ' + str(timeCOP[0].year) + ' ' + '[' + str(timeCOP[0])[5:13] + ',' + str(
                          timeCOP[-1])[5:13] + ']')
-        plt.ylabel('Depth (m)', fontsize=20)
-        plt.xlabel('Salinity', fontsize=20)
-        plt.title('Salinity Profile ' + id, fontsize=20)
+        plt.ylabel('Depth (m)', fontsize=13)
+        plt.xlabel('Salinity (psu)', fontsize=13)
+        deep = False
         if np.nanmax(depthg) <= 100:
             plt.ylim([-np.nanmax(depthg) - 30, 0.1])
         else:
             plt.ylim([-np.nanmax(depthg) - 100, 0.1])
-        plt.legend(loc='lower left', bbox_to_anchor=(-0.2, 0.0), fontsize=14)
+            if np.nanmax(depthg) > 400:
+                deep = True
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height * 0.9])
+        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.06), ncol=1, fontsize=11)
         plt.grid('on')
 
-        # lat and lon bounds of box to draw
-        if len(oklatRTOFS) != 0:
-            minlonRTOFS = np.min(
-                meshlonRTOFSg[0][oklatRTOFS.min() - 2:oklatRTOFS.max() + 2, oklonRTOFS.min() - 2:oklonRTOFS.max() + 2])
-            maxlonRTOFS = np.max(
-                meshlonRTOFSg[0][oklatRTOFS.min() - 2:oklatRTOFS.max() + 2, oklonRTOFS.min() - 2:oklonRTOFS.max() + 2])
-            minlatRTOFS = np.min(
-                meshlatRTOFSg[0][oklonRTOFS.min() - 2:oklonRTOFS.max() + 2, oklatRTOFS.min() - 2:oklatRTOFS.max() + 2])
-            maxlatRTOFS = np.max(
-                meshlatRTOFSg[0][oklonRTOFS.min() - 2:oklonRTOFS.max() + 2, oklatRTOFS.min() - 2:oklatRTOFS.max() + 2])
-
-        # Getting subdomain for plotting glider track on bathymetry
-        oklatbath = np.logical_and(bath_lat >= np.min(latg) - 5, bath_lat <= np.max(latg) + 5)
-        oklonbath = np.logical_and(bath_lon >= np.min(long) - 5, bath_lon <= np.max(long) + 5)
-
-        ax = plt.subplot(grid[0:2, 1])
-        bath_latsub = bath_lat[oklatbath]
-        bath_lonsub = bath_lon[oklonbath]
-        bath_elevs = bath_elev[oklatbath, :]
-        bath_elevsub = bath_elevs[:, oklonbath]
-
-        lev = np.arange(-9000, 9100, 100)
-        plt.contourf(bath_lonsub, bath_latsub, bath_elevsub, lev, cmap=cmocean.cm.topo)
-        plt.plot(long, latg, '.-', color='orange', label='Glider track',
-                 markersize=3)
-        if len(oklatRTOFS) != 0:
-            rect = patches.Rectangle((minlonRTOFS, minlatRTOFS),
-                                     maxlonRTOFS - minlonRTOFS, maxlatRTOFS - minlatRTOFS,
-                                     linewidth=1, edgecolor='k', facecolor='none')
-            ax.add_patch(rect)
-        plt.title('Glider track and model grid positions', fontsize=20)
-        plt.axis('scaled')
-        plt.legend(loc='upper center', bbox_to_anchor=(1.1, 1))
-
-        ax = plt.subplot(grid[2, 1])
-        ax.plot(long, latg, '.-', color='orange', label='Glider track')
-        ax.plot(long[0], latg[0], 'sc', label='Initial profile time ' + str(timeg[0])[0:16])
-        ax.plot(long[-1], latg[-1], 'sb', label='final profile time ' + str(timeg[-1])[0:16])
-        if len(oklatGOFS) != 0:
-            ax.plot(meshlonGOFSg[0][oklatGOFS.min() - 2:oklatGOFS.max() + 2, oklonGOFS.min() - 2:oklonGOFS.max() + 2],
-                    meshlatGOFSg[0][oklonGOFS.min() - 2:oklonGOFS.max() + 2, oklatGOFS.min() - 2:oklatGOFS.max() + 2].T,
-                    '.', color='red')
-            ax.plot(lonGOFSg[oklonGOFS], latGOFSg[oklatGOFS], 'or',
-                    markersize=8, markeredgecolor='k',
-                    label='GOFS 3.1 grid points \n nx = ' + str(oklonGOFS)
-                          + '\n ny = ' + str(oklatGOFS)
-                          + '\n [day][hour] = ' + str(np.unique([str(i)[8:10] for i in timeGOFS]))
-                          + str([str(i)[11:13] for i in timeGOFS]))
-        if len(oklatRTOFS) != 0:
-            ax.plot(
-                meshlonRTOFSg[0][oklatRTOFS.min() - 2:oklatRTOFS.max() + 2, oklonRTOFS.min() - 2:oklonRTOFS.max() + 2],
-                meshlatRTOFSg[0][oklonRTOFS.min() - 2:oklonRTOFS.max() + 2,
-                oklatRTOFS.min() - 2:oklatRTOFS.max() + 2].T,
-                '.', color='green')
-            ax.plot(lonRTOFSg[oklonRTOFS], latRTOFSg[oklatRTOFS], 'og',
-                    markersize=8, markeredgecolor='k',
-                    label='RTOFS grid points \n nx = ' + str(oklonRTOFS)
-                          + '\n ny = ' + str(oklatRTOFS)
-                          + '\n [day][hour] = ' + str(np.unique([str(i)[8:10] for i in timeRTOFS]))
-                          + str([str(i)[11:13] for i in timeRTOFS]))
-        if len(oklatCOP) != 0:
-            ax.plot(meshlonCOP[0][oklatCOP.min() - 2:oklatCOP.max() + 2, oklonCOP.min() - 2:oklonCOP.max() + 2],
-                    meshlatCOP[0][oklonCOP.min() - 2:oklonCOP.max() + 2, oklatCOP.min() - 2:oklatCOP.max() + 2].T,
-                    '.', color='darkorchid')
-            ax.plot(lonCOP[oklonCOP], latCOP[oklatCOP], 'o', color='darkorchid',
-                    markersize=8, markeredgecolor='k',
-                    label='Copernicus grid points \n nx = ' + str(oklonCOP_glob)
-                          + '\n ny = ' + str(oklatCOP_glob)
-                          + '\n [day][hour] = ' + str([str(i)[8:10] for i in timeCOP])
-                          + str([str(i)[11:13] for i in timeCOP]))
-        ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.3))
-
-        file = os.path.join(folder, f'{id}_salt_profile_{tini.strftime("%Y%m%d")}_to_{tend.strftime("%Y%m%d")}')
+        file = os.path.join(folder, f'{id}_profiles_{t0.strftime("%Y%m%d")}_to_{t1.strftime("%Y%m%d")}')
         plt.savefig(file, bbox_inches='tight', pad_inches=0.1)
+        plt.close()
+
+        # only make 400m plots if its a deep profile
+        if deep:
+            #         400m
+            # Temperature profile
+            fig, ax = plt.subplots(figsize=(20, 12))
+            grid = plt.GridSpec(5, 3, wspace=0.2, hspace=0.2)
+
+            ax = plt.subplot(grid[:, 0])
+            plt.plot(tempg, -depthg, '.', color='cyan', label='_nolegend_')
+            plt.plot(np.nanmean(tempg_gridded, axis=1), -depthg_gridded, '.-b',
+                     label=id[:-14] + ' ' + str(timeg[0])[0:4] + ' ' + '[' + str(timeg[0])[5:19] + ',' + str(timeg[-1])[
+                                                                                                         5:19] + ']')
+
+            plt.plot(target_tempGOFS, -depthGOFS, '.-', color='lightcoral', label='_nolegend_')
+            if len(oktimeGOFS) != 0:
+                plt.plot(np.nanmean(target_tempGOFS, axis=1), -depthGOFS, '.-r', markersize=12, linewidth=2,
+                         label='GOFS 3.1' + ' ' + str(timeGOFS[0].year) + ' ' + '[' + str(timeGOFS[0])[5:13] + ',' + str(
+                             timeGOFS[-1])[5:13] + ']')
+            plt.plot(target_tempRTOFS, -depthRTOFS, '.-', color='mediumseagreen', label='_nolegend_')
+            if len(oktimeRTOFS) != 0:
+                plt.plot(np.nanmean(target_tempRTOFS, axis=1), -depthRTOFS, '.-g', markersize=12, linewidth=2,
+                         label='RTOFS' + ' ' + str(timeRTOFS[0].year) + ' ' + '[' + str(timeRTOFS[0])[5:13] + ',' + str(
+                             timeRTOFS[-1])[5:13] + ']')
+            plt.plot(target_tempCOP, -depthCOP, '.-', color='plum', label='_nolegend_')
+            if len(oktimeCOP) != 0:
+                plt.plot(np.nanmean(target_tempCOP, axis=1), -depthCOP, '.-', color='darkorchid', markersize=12,
+                         linewidth=2,
+                         label='Copernicus' + ' ' + str(timeCOP[0].year) + ' ' + '[' + str(timeCOP[0])[5:13] + ',' + str(
+                             timeCOP[-1])[5:13] + ']')
+            plt.ylabel('Depth (m)', fontsize=13)
+            plt.xlabel('Temperature ($^oC$)', fontsize=13)
+
+            if np.nanmax(depthg) <= 100:
+                plt.ylim([-np.nanmax(depthg) - 30, 0.1])
+            else:
+                plt.ylim([-np.nanmax(depthg) - 100, 0.1])
+
+            # plt.legend(loc='lower left', bbox_to_anchor=(-0.2, 0.0), fontsize=8)
+            box = ax.get_position()
+            ax.set_position([box.x0, box.y0 + box.height * 0.1,
+                             box.width, box.height * 0.9])
+            ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.06), ncol=1, fontsize=11)
+            plt.grid('on')
+            plt.ylim([-400, 1])
+
+            # lat and lon bounds of box to draw
+            if len(oklatRTOFS) != 0:
+                minlonRTOFS = np.min(
+                    meshlonRTOFSg[0][oklatRTOFS.min() - 1:oklatRTOFS.max() + 1, oklonRTOFS.min() - 1:oklonRTOFS.max() + 1])
+                maxlonRTOFS = np.max(
+                    meshlonRTOFSg[0][oklatRTOFS.min() - 1:oklatRTOFS.max() + 1, oklonRTOFS.min() - 1:oklonRTOFS.max() + 1])
+                minlatRTOFS = np.min(
+                    meshlatRTOFSg[0][oklonRTOFS.min() - 1:oklonRTOFS.max() + 1, oklatRTOFS.min() - 1:oklatRTOFS.max() + 1])
+                maxlatRTOFS = np.max(
+                    meshlatRTOFSg[0][oklonRTOFS.min() - 1:oklonRTOFS.max() + 1, oklatRTOFS.min() - 1:oklatRTOFS.max() + 1])
+
+            # Getting subdomain for plotting glider track on bathymetry
+            oklatbath = np.logical_and(bath_lat >= np.min(latg) - 5, bath_lat <= np.max(latg) + 5)
+            oklonbath = np.logical_and(bath_lon >= np.min(long) - 5, bath_lon <= np.max(long) + 5)
+
+            bath_latsub = bath_lat[oklatbath]
+            bath_lonsub = bath_lon[oklonbath]
+            bath_elevs = bath_elev[oklatbath, :]
+            bath_elevsub = bath_elevs[:, oklonbath]
+
+            ax = plt.subplot(grid[0:2, 1])
+            lev = np.arange(-9000, 9100, 100)
+            plt.contourf(bath_lonsub, bath_latsub, bath_elevsub, lev, cmap=cmocean.cm.topo)
+            plt.plot(long, latg, '.-', color='orange', label=f'Glider track: {id}',
+                     markersize=3)
+
+            if len(oklatRTOFS) != 0:
+                rect = patches.Rectangle((minlonRTOFS, minlatRTOFS),
+                                         maxlonRTOFS - minlonRTOFS, maxlatRTOFS - minlatRTOFS,
+                                         linewidth=1, edgecolor='k', facecolor='none')
+                ax.add_patch(rect)
+            plt.title(f'Glider - {id} track', fontsize=14)
+            # plt.legend(loc='upper center', bbox_to_anchor=(1.1, 1))
+
+            ax = plt.subplot(grid[3:4, 1])
+            ax.plot(long, latg, '.-', color='orange', label=f'Glider track: {id}')
+            ax.plot(long[0], latg[0], 'sc', label='Initial profile time ' + str(timeg[0])[0:16])
+            ax.plot(long[-1], latg[-1], 'sb', label='final profile time ' + str(timeg[-1])[0:16])
+            if len(oklatGOFS) != 0:
+                ax.plot(meshlonGOFSg[0][oklatGOFS.min() - 2:oklatGOFS.max() + 2, oklonGOFS.min() - 2:oklonGOFS.max() + 2],
+                        meshlatGOFSg[0][oklonGOFS.min() - 2:oklonGOFS.max() + 2, oklatGOFS.min() - 2:oklatGOFS.max() + 2].T,
+                        '.', color='red')
+
+                ax.plot(lonGOFSg[oklonGOFS], latGOFSg[oklatGOFS], 'or',
+                        markersize=8, markeredgecolor='k',
+                        label='GOFS 3.1 grid points')
+            if len(oklatRTOFS) != 0:
+                ax.plot(
+                    meshlonRTOFSg[0][oklatRTOFS.min() - 2:oklatRTOFS.max() + 2, oklonRTOFS.min() - 2:oklonRTOFS.max() + 2],
+                    meshlatRTOFSg[0][oklonRTOFS.min() - 2:oklonRTOFS.max() + 2,
+                    oklatRTOFS.min() - 2:oklatRTOFS.max() + 2].T,
+                    '.', color='green')
+                ax.plot(lonRTOFSg[oklonRTOFS], latRTOFSg[oklatRTOFS], 'og',
+                        markersize=8, markeredgecolor='k',
+                        label='RTOFS grid points')
+            if len(oklatCOP) != 0:
+                ax.plot(meshlonCOP[0][oklatCOP.min() - 2:oklatCOP.max() + 2, oklonCOP.min() - 2:oklonCOP.max() + 2],
+                        meshlatCOP[0][oklonCOP.min() - 2:oklonCOP.max() + 2, oklatCOP.min() - 2:oklatCOP.max() + 2].T,
+                        '.', color='darkorchid')
+                ax.plot(lonCOP[oklonCOP], latCOP[oklatCOP], 'o', color='darkorchid',
+                        markersize=8, markeredgecolor='k',
+                        label='Copernicus grid points')
+            ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.3), fontsize=11)
+            plt.title('Model grid positions', fontsize=14)
+
+
+            # Salinity profile
+            ax = plt.subplot(grid[:, 2])
+            plt.plot(saltg, -depthg, '.', color='cyan')
+            plt.plot(np.nanmean(saltg_gridded, axis=1), -depthg_gridded, '.-b',
+                     label=id[:-14] + ' ' + str(timeg[0])[0:4] + ' ' + '[' + str(timeg[0])[5:19] + ',' + str(timeg[-1])[
+                                                                                                         5:19] + ']')
+            plt.plot(target_saltGOFS, -depthGOFS, '.-', color='lightcoral', label='_nolegend_')
+            if len(oktimeGOFS) != 0:
+                plt.plot(np.nanmean(target_saltGOFS, axis=1), -depthGOFS, '.-r', markersize=12, linewidth=2,
+                         label='GOFS 3.1' + ' ' + str(timeGOFS[0].year) + ' ' + '[' + str(timeGOFS[0])[5:13] + ',' + str(
+                             timeGOFS[-1])[5:13] + ']'
+                         )
+            plt.plot(target_saltRTOFS, -depthRTOFS, '.-', color='mediumseagreen', label='_nolegend_')
+            if len(oktimeRTOFS) != 0:
+                plt.plot(np.nanmean(target_saltRTOFS, axis=1), -depthRTOFS, '.-g', markersize=12, linewidth=2,
+                         label='RTOFS' + ' ' + str(timeRTOFS[0].year) + ' ' + '[' + str(timeRTOFS[0])[5:13] + ',' + str(
+                             timeRTOFS[-1])[5:13] + ']'
+                         )
+            plt.plot(target_saltCOP, -depthCOP, '.-', color='plum', label='_nolegend_')
+            if len(oktimeCOP) != 0:
+                plt.plot(np.nanmean(target_saltCOP, axis=1), -depthCOP, '.-', color='darkorchid', markersize=12,
+                         linewidth=2,
+                         label='Copernicus' + ' ' + str(timeCOP[0].year) + ' ' + '[' + str(timeCOP[0])[5:13] + ',' + str(
+                             timeCOP[-1])[5:13] + ']')
+            plt.ylabel('Depth (m)', fontsize=13)
+            plt.xlabel('Salinity (psu)', fontsize=13)
+
+            if np.nanmax(depthg) <= 100:
+                plt.ylim([-np.nanmax(depthg) - 30, 0.1])
+            else:
+                plt.ylim([-np.nanmax(depthg) - 100, 0.1])
+            box = ax.get_position()
+            ax.set_position([box.x0, box.y0 + box.height * 0.1, box.width, box.height * 0.9])
+            ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.06), ncol=1, fontsize=11)
+            plt.grid('on')
+            plt.ylim([-400, 1])
+
+            file = os.path.join(folder, f'{id}_profiles_400m_{t0.strftime("%Y%m%d")}_to_{t1.strftime("%Y%m%d")}')
+            plt.savefig(file, bbox_inches='tight', pad_inches=0.1)
